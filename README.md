@@ -6,13 +6,27 @@ A browser GUI for teaching age-structured fisheries **management strategy evalua
 
 **The GUI runs entirely in your browser, with no account or installation required.** This repository includes a ready-to-open `index.html` and an automated GitHub Pages workflow.
 
-![Historical F and the population response](assets/historical-population.png)
+![The guided fisheries MSE interface](assets/interface-overview.png)
 
 ## Play with the GUI
 
 1. Download this repository with **Code → Download ZIP** and extract it.
 2. Double-click **index.html** to open it in a modern browser.
-3. Edit the historical F series or load an example, adjust the survey and management settings, and click **Run history + 8 strategies**.
+3. Follow the five sections: **Stock & history → Survey & estimate → Harvest rules → Compare outcomes → One future**.
+4. Build an F history with shape controls, drag annual bars, or import a CSV. Sliders have exact number inputs beside them.
+5. Leave **Auto update** on to refresh results after edits. Turn it off and use **Update simulation** when you want to make several edits together.
+
+On smaller screens, use **Edit … settings** to open the controls. The plot workspace stays visible when the controls are closed.
+
+### Explore, compare and save
+
+- **Compare outcomes:** a catch-versus-risk plot, all-strategy median biomass and catch plots, and the numerical table. Select a strategy from a point, legend, dropdown or table row.
+- **Pin a baseline:** retain the current completed run, change one assumption, and inspect metric differences and the dashed baseline trajectory. Baselines last for the current browser session.
+- **One future:** step through years or press **Play years** to animate the survey → estimate → advice → fishing feedback loop.
+- **Plot tools:** enlarge any plot or download a standalone SVG with its title and axes.
+- **Save / Load scenario:** download or open JSON settings to reproduce a classroom exercise. Keep the random seed fixed for paired experiments.
+- **Historical CSV:** import a single F column, year/F pairs, or the app’s own exported history. Annual values are checked before use.
+- **Classroom questions:** one-click scenarios explore rebuilding, survey error and catch levels.
 
 The offline GUI works without an internet connection. Browser settings remember the latest completed scenario. Source links in the explanatory text require internet access when opened.
 
@@ -81,6 +95,8 @@ After source edits, rebuild before opening the offline `index.html`. Pages alway
 | `src/model.js` | Population dynamics, presets, BH parameters, estimator, reference points or HCRs |
 | `src/app.js` | GUI controls, SVG plots, worker execution or CSV exports |
 | `src/page.html` | Layout, wording, equations or source links |
+| `src/ui.js`, `src/ui.css` | Guided sections, visual history editing, comparison plots and responsive controls |
+| `src/ui-helpers.js` | Validated history generation and CSV parsing |
 | `scripts/build.cjs` | Standalone HTML packaging |
 | `tests/model.test.cjs` | Scientific and stochastic consistency checks |
 | `.github/workflows/pages.yml` | Continuous checks and Pages deployment |
@@ -91,6 +107,6 @@ After source edits, rebuild before opening the offline `index.html`. Pages alway
 
 This is a teaching simulator with illustrative parameter combinations, not a calibrated stock assessment. All stocks have unfished SSB of 1,000 tonnes. Historical recruitment uses the Beverton–Holt mean; the recruitment-CV control applies to future projections. The historical F series is applied directly to the true population. Future F targets are converted to catch advice using estimated abundance, so realized F can differ from target F.
 
-The 21 model checks cover age-group survival, recruitment, catch calculations, reference-point maximization, historical forcing, estimator conditioning, historical-to-future timing, common random numbers and HCR behavior. The browser GUI also contains expandable equations and assumptions.
+The 23 automated checks include 21 model checks that cover age-group survival, recruitment, catch calculations, reference-point maximization, historical forcing, estimator conditioning, historical-to-future timing, common random numbers and HCR behavior, plus checks for the history builder and CSV importer. The browser GUI also contains expandable equations and assumptions.
 
 See the primary references linked inside the app: [IOTC age-based equations](https://iotc.org/sites/default/files/documents/2023/09/IOTC-2023-WGFAD05-04.pdf), [FAO reference points](https://www.fao.org/4/v8400e/V8400E02.HTM), and [openMSE recruitment](https://openmse.com/object-stock/3-recruitment-parameters/).
