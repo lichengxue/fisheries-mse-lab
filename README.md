@@ -12,7 +12,7 @@ A browser GUI for teaching age-structured fisheries **management strategy evalua
 
 1. Download this repository with **Code → Download ZIP** and extract it.
 2. Double-click **index.html** to open it in a modern browser.
-3. Follow the five sections: **Stock & history → Survey & estimate → Harvest rules → Compare outcomes → One future**.
+3. Follow the six sections: **Stock & history → Survey & estimate → Harvest rules → Compare outcomes → One future → People & value**.
 4. Build an F history with shape controls, drag annual bars, or import a CSV. Sliders have exact number inputs beside them.
 5. Leave **Auto update** on to refresh results after edits. Turn it off and use **Update simulation** when you want to make several edits together.
 
@@ -26,7 +26,13 @@ On smaller screens, use **Edit … settings** to open the controls. The plot wor
 - **Plot tools:** enlarge any plot or download a standalone SVG with its title and axes.
 - **Save / Load scenario:** download or open JSON settings to reproduce a classroom exercise. Keep the random seed fixed for paired experiments.
 - **Historical CSV:** import a single F column, year/F pairs, or the app’s own exported history. Annual values are checked before use.
+- **Economics & livelihoods:** live price, cost, allocation, discount and survey-budget assumptions; profit uncertainty, NPV, fleet distribution, job-year proxies and a price/cost shock matrix.
+- **Stakeholder workshop:** editable role objectives and influence, shared limits, score heatmap, manual ballots, discussion decisions and eight retained rounds. Scenario files include workshop settings; reports and economic CSVs can be downloaded.
 - **Classroom questions:** one-click scenarios explore rebuilding, survey error and catch levels.
+
+![Economic uncertainty and trade-offs](assets/people-economics.png)
+
+![Stakeholder objective scores and shared limits](assets/stakeholder-workshop.png)
 
 The offline GUI works without an internet connection. Browser settings remember the latest completed scenario. Source links in the explanatory text require internet access when opened.
 
@@ -43,6 +49,7 @@ If your browser restricts local HTML features, use the local server below or the
 | Estimation | Latest survey, up-to-three-survey mean, or a simple age-structured filter; conditioned using historical surveys and catches |
 | Future HCRs | Three independent fixed catches, proportional catch, catch ramp, smoothed catch ramp, constant F target, or F-based ramp |
 | Reference points | Deterministic FMSY, MSY and SSBMSY calculated from assumed biology |
+| People & value | Fleet accounting, profit/NPV uncertainty, job-year proxies, economic shocks, stakeholder objectives, guardrails, ballots and discussion rounds |
 | Outputs | Historical F and stock response, biomass/catch uncertainty bands, risk, catch variation, age composition, F, recruitment and CSV exports |
 
 For a first experiment, paste this historical F series (oldest year first):
@@ -52,6 +59,8 @@ For a first experiment, paste this historical F series (oldest year first):
 ```
 
 Compare its population response with an unfished history. Then compare future catch quotas or change the FMSY multiplier. Keep the seed fixed for comparisons.
+
+The [economics and workshop guide](docs/ECONOMICS_AND_WORKSHOP.txt) gives accounting equations, score definitions and a 20-minute role-play exercise. Economic values and stakeholder role defaults are illustrative assumptions, not empirical estimates. Economics is applied to all simulated futures and does not feed back into stock dynamics.
 
 The [instructor guide](docs/INSTRUCTOR_GUIDE.txt) contains a classroom exercise and detailed output definitions. [Model equations and timing](docs/MODEL.md) explain how historical F, recruitment and future decisions connect.
 
@@ -96,6 +105,8 @@ After source edits, rebuild before opening the offline `index.html`. Pages alway
 | `src/app.js` | GUI controls, SVG plots, worker execution or CSV exports |
 | `src/page.html` | Layout, wording, equations or source links |
 | `src/ui.js`, `src/ui.css` | Guided sections, visual history editing, comparison plots and responsive controls |
+| `src/economics.js` | All-future economic accounting, objective scoring, shared limits and dominance |
+| `src/workshop.js`, `src/workshop.css` | Economic dashboard, stakeholder workshop, local persistence and reports |
 | `src/ui-helpers.js` | Validated history generation and CSV parsing |
 | `scripts/build.cjs` | Standalone HTML packaging |
 | `tests/model.test.cjs` | Scientific and stochastic consistency checks |
@@ -107,6 +118,6 @@ After source edits, rebuild before opening the offline `index.html`. Pages alway
 
 This is a teaching simulator with illustrative parameter combinations, not a calibrated stock assessment. All stocks have unfished SSB of 1,000 tonnes. Historical recruitment uses the Beverton–Holt mean; the recruitment-CV control applies to future projections. The historical F series is applied directly to the true population. Future F targets are converted to catch advice using estimated abundance, so realized F can differ from target F.
 
-The 23 automated checks include 21 model checks that cover age-group survival, recruitment, catch calculations, reference-point maximization, historical forcing, estimator conditioning, historical-to-future timing, common random numbers and HCR behavior, plus checks for the history builder and CSV importer. The browser GUI also contains expandable equations and assumptions.
+The 29 automated checks include 21 model checks that cover age-group survival, recruitment, catch calculations, reference-point maximization, historical forcing, estimator conditioning, historical-to-future timing, common random numbers and HCR behavior, plus checks for the history builder and CSV importer, and six checks covering accounting, discounting, ensemble consistency, role scoring, shared limits and dominance. The browser GUI also contains expandable equations and assumptions.
 
 See the primary references linked inside the app: [IOTC age-based equations](https://iotc.org/sites/default/files/documents/2023/09/IOTC-2023-WGFAD05-04.pdf), [FAO reference points](https://www.fao.org/4/v8400e/V8400E02.HTM), and [openMSE recruitment](https://openmse.com/object-stock/3-recruitment-parameters/).
