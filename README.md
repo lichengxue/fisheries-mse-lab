@@ -4,7 +4,7 @@
 
 A browser GUI for teaching age-structured fisheries **management strategy evaluation (MSE)**. Historical fishing mortality drives the population, Beverton–Holt recruitment supplies new fish, and future management procedures are compared under imperfect information.
 
-**No GPT, OpenAI account, API key, Python, R, or package installation is needed to use the GUI.** The model runs entirely in the browser. This repository includes a ready-to-open `index.html` and an automated GitHub Pages workflow.
+**The GUI runs entirely in your browser, with no account or installation required.** This repository includes a ready-to-open `index.html` and an automated GitHub Pages workflow.
 
 ![Historical F and the population response](assets/historical-population.png)
 
