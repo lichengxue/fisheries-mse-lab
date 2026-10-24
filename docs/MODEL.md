@@ -53,3 +53,7 @@ The estimator receives simulated surveys and reported catch, never true numbers 
 Equilibrium survivorship and the BH relationship determine abundance at each candidate constant F. Baranov catch gives equilibrium yield. A grid search and numerical refinement maximize that yield to calculate FMSY, MSY and SSBMSY. These deterministic biological reference points do not change merely because the historical F vector changes.
 
 The crossing-risk metric counts projection years 1 through the chosen horizon; it excludes historical years and the projection-start state. Mean catch averages all projection years and futures. Bands are pointwise 10th–90th percentiles across futures, not confidence intervals for the median. Reported FMSY is an illustrative model benchmark, not stock-specific advice.
+
+## Economic postprocessing and stakeholder workshop
+
+Model 1.3.0 retains actual catch and F for every future and projection year. This adds no random draws and changes no biological equations. `src/economics.js` applies editable accounting assumptions to these trajectories; `src/workshop.js` displays economic outcomes and an objective-scoring workshop. These modules do not alter biology, management advice or fleet behavior. See [the full equations and exercise](ECONOMICS_AND_WORKSHOP.txt). The interface labels landings-supported job-years as a proxy and separates calculated preference scores from participants’ recorded votes.

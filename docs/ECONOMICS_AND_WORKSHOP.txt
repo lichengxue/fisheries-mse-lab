@@ -1,0 +1,123 @@
+PEOPLE & VALUE: A CLASSROOM MSE WORKSHOP
+Interface 1.4.0 / age-structured model 1.3.0
+
+Open section 6, People & value. The Economics & livelihoods and Stakeholder
+workshop buttons switch between accounting outcomes and deliberation tools.
+Use the settings panel (or Edit people & value settings on smaller screens).
+
+WHAT CHANGES THE POPULATION?
+The age-structured model, historical F series, Beverton-Holt recruitment,
+observation model, estimator and HCR determine each biological future. This
+extension retains actual catch and F for every future and every projection year.
+Economic assumptions and stakeholder preferences are applied afterward. They
+do not alter population dynamics, fleet behavior, or how the HCR sets fishing.
+
+ECONOMIC ACCOUNTING
+All dollar values are illustrative classroom assumptions, not empirical fleet
+estimates. Change them to examine how conclusions depend on assumptions.
+
+Revenue = actual landed tonnes x 1,000 x landed price per kilogram.
+The small-vessel allocation is a fraction of actual catch; the large-vessel
+allocation is the remainder. Both use the same price and stock/selectivity.
+
+For an allocated fleet segment:
+  cost = annual fixed cost + variable-cost multiplier x cost per unit F
+         x actual annual F x allocated share.
+An unallocated segment (share = 0) incurs no costs. Otherwise fixed costs remain
+even during closures. F is an effort proxy, not a vessel-days observation.
+
+Operating profit = revenue - fishing cost. It excludes the public survey cost.
+Annual survey cost = number of projection survey visits x cost per visit / years.
+The separate net-after-survey figure subtracts that agency cost from profit.
+
+Supported job-years = segment landed tonnes / segment tonnes per job-year.
+This is a simple landings-supported livelihoods proxy, not an employment
+forecast. It omits household income, seasonality and within-segment inequality.
+
+NPV = sum over years of profit / (1 + discount rate)^year; year 1 is discounted
+once. Metrics average every year and replicate, not just a representative path.
+Loss years is the fraction of replicate-years with profit < 0. Negative NPV is
+the fraction of futures with discounted total profit < 0. The NPV and annual
+profit 10th-90th percentiles describe variation among simulated futures.
+
+The shock matrix compares current assumptions, 1.5 times variable costs (capped
+at the control maximum of 5), and 0.75 times price. Biology stays fixed. The
+accounting omits price/effort feedback, fleet entry/exit, investment, demand,
+subsidies, processing, recreational values and ecosystem-service valuation.
+
+STAKEHOLDER OBJECTIVES
+Four default classroom role cards illustrate differing priorities. These are
+editable prompts, not statements about the views of real stakeholder groups.
+Rename roles, add up to two more, remove roles, or exclude a role from scores.
+
+Set each objective weight from 0 to 10, role influence from 0 to 10, and a
+minimum acceptable score from 0 to 100. A role with no positive objective weights
+has no valid score. An excluded role or one with zero influence is omitted from
+calculated acceptance and overall scores. Manual ballots remain separate.
+
+Each raw outcome is converted to a 0-100 objective score:
+  Safety = 100 x (1 - probability of crossing the biomass limit at least once).
+  Profit = 100 x clamp(mean annual operating profit / profit target, 0, 1).
+  Livelihoods = 100 x clamp(mean supported job-years / livelihoods target, 0, 1).
+  Catch = 100 x clamp(mean annual actual catch / catch target, 0, 1).
+  Stability = 100 x clamp(1 - mean absolute annual catch change / tolerance, 0, 1).
+Targets are fixed anchors, not min-max rescaling of the candidate strategies.
+Negative profit receives zero profit points. Values above a target saturate.
+Role score = sum(objective score x weight) / sum(objective weights).
+Overall score = sum(role score x influence) / sum(role influence).
+
+Shared limits independently constrain crossing risk, mean annual profit, mean
+supported job-years, and annual survey cost. They do not use the scaled scores.
+A strategy passes all stated thresholds only if every included role's score
+floor and every enabled shared limit passes. No valid roles means no calculated
+agreement. A weighted leader satisfies shared limits but may fail some role
+floors. Neither label implies actual stakeholder endorsement or a policy mandate.
+
+The non-dominated label compares risk (lower is better), mean profit (higher),
+supported job-years (higher), and mean absolute catch change (lower). A rule is
+dominated when another candidate is no worse on all four and better on at least
+one. This is relative to the eight candidates and those four metrics; it does
+not incorporate every possible objective or uncertainty about preferences.
+
+DELIBERATION AND SAVING
+Participants enter their own ballots and concerns; the model never votes for
+them. A discussion decision and rationale can record disagreement or a request
+for revised objectives. Record round snapshots the completed model settings,
+economic assumptions, role priorities, ballots, performance and decision. The
+latest eight rounds remain in this browser on this origin. Reset workshop
+assumptions resets current preferences and accounting, retaining recorded rounds.
+Save scenario includes current workshop settings and rounds. Load scenario
+restores them; older biological-only scenario files remain supported. Download
+workshop report produces a shareable JSON snapshot with all retained rounds.
+Download economics CSV provides all-strategy economic metrics and assumptions.
+Plot tools enlarge or export the economic figures as SVG.
+
+20-MINUTE CLASSROOM EXERCISE
+1. Start with the same stock, historical F, seed and noise. Identify whether the
+   highest-catch rule also yields the highest profit. Explain the role of F cost.
+2. Halve landed price. Which rules incur losses? Compare annual losses with the
+   probability of a negative NPV. Restore price; raise variable costs by 50%.
+3. Allocate 80% of catch to the small-vessel segment. Compare supported job-years
+   and profit distribution. Why did the biomass and catch futures stay the same?
+4. Divide students into fleet, community, conservation and management roles.
+   Enter priorities and acceptable scores before interpreting the matrix. Agree
+   on a risk ceiling, profit floor, livelihoods floor and public survey budget.
+5. Deliberate, enter votes and concerns, then record a decision and rationale.
+   Does the weighted leader have unanimous support? If no candidate passes all
+   thresholds, which objective, limit or management procedure might be revised?
+6. Keep the seed fixed. Reduce survey CV and run the biological simulation again.
+   Increase the cost per survey to represent more precise sampling. Compare the
+   risk and economic outputs under the same preferences; record a second round.
+   This is a sensitivity exercise, not a formal calculation of value of information.
+
+PARTICIPATION IN MSE
+Stakeholders can contribute to objectives, performance measures, plausible
+scenarios and interpretation throughout the MSE process. This small workshop
+illustrates that iterative role; it is not a substitute for a representative,
+facilitated engagement process in an actual fishery.
+
+Sources:
+Closing the feedback loop: on stakeholder participation in management strategy
+evaluation (2019), NOAA repository: https://repository.library.noaa.gov/view/noaa/34513
+CDFW, Management Strategy Evaluation:
+https://wildlife.ca.gov/Conservation/Marine/MLMA/Master-Plan/Mgmt-Strategy-Eval

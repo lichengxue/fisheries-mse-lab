@@ -1,6 +1,6 @@
-INTERFACE 1.3 — QUICK CLASSROOM WORKFLOW
+INTERFACE 1.4 — QUICK CLASSROOM WORKFLOW
 
-Use the five sections across the top. On a small screen, open “Edit … settings” when controls are needed.
+Use the six sections across the top. On a small screen, open “Edit … settings” when controls are needed.
 
 1. STOCK & HISTORY: Choose a life history. Use the shape builder (constant F, ramp, or rise then rebuilding), drag the annual F bars, or type an exact year/F value. Undo restores the preceding history. CSV import accepts F alone, year/F pairs, or this app's historical export.
 2. SURVEY & ESTIMATE: Sliders have numeric companions. The survey illustration isolates measurement error by repeatedly sampling a fixed 1,000 t stock. The adjacent projection plot shows actual simulated observations and estimation.
@@ -8,14 +8,16 @@ Use the five sections across the top. On a small screen, open “Edit … settin
 4. COMPARE OUTCOMES: Inspect catch against crossing risk and compare median trajectories for all eight rules. Pin a completed run before changing one assumption; the same rule's baseline is shown with a dark dashed line and metric deltas. This baseline is kept for the current page session.
 5. ONE FUTURE: Use the year slider, year number, Previous/Next, or Play years. This scrubs an already-computed individual future without changing its random draws.
 
+6. PEOPLE & VALUE: Explore economic outcomes, fleet allocation and job-year proxies. Switch to Stakeholder workshop to edit role priorities, shared limits, votes and discussion rounds. See ECONOMICS_AND_WORKSHOP.txt for details.
+
 Auto update refreshes the ensemble after a short pause in editing. Switch it off to batch changes, then press Update simulation. “Changes waiting to run” means the plots still show the preceding completed settings. Save/Load scenario transfers validated JSON settings. SVG buttons export the plotted scientific graphic; the enlarge button opens a larger view. Summary and historical CSV exports remain available.
 
-The scientific model and all definitions below are unchanged from model 1.2.0. Interface 1.3.0 adds the controls and comparison views described above.
+The biological equations remain unchanged. Model 1.3.0 also retains each future's actual catch and F for economic postprocessing. Interface 1.4.0 adds economic outcomes and the stakeholder workshop.
 
 --------------------------------------------------------------------
 
 FISHERIES MSE CLASSROOM LAB — INSTRUCTOR NOTES
-Model version 1.2.0
+Model version 1.3.0
 
 OPEN THE DEMO
 Open Classroom_Age_Structured_MSE_Demo.html in a modern browser. No installation,
@@ -148,7 +150,7 @@ A SHORT CLASSROOM EXERCISE
 
 BOUNDARIES AND SOURCE
 Illustrative combined-sex single stock, fixed growth/maturity/selectivity, no
-movement, no age-composition sampling, no economics. Historical years use mean
+movement, no age-composition sampling, a simplified economic accounting extension (see ECONOMICS_AND_WORKSHOP.txt). Historical years use mean
 recruitment, and future recruitment deviations are independent. These are not
 calibrated stock assessments or real management advice. Equations and primary
 source links are in the demo's expandable model section.
@@ -165,3 +167,9 @@ Edit source; run: npm run build
 Verify: node --test tests/model.test.cjs
 Only Node built-in modules are required. Open index.html directly, or run npm start
 and open http://127.0.0.1:8000. The GitHub Pages workflow deploys dist/.
+
+PEOPLE & VALUE EXTENSION
+Section 6 adds all-future economic accounting and an editable stakeholder
+workshop. See ECONOMICS_AND_WORKSHOP.txt for equations, assumptions, scoring,
+manual votes, saved rounds and a 20-minute exercise. Economics does not feed
+back into the population or HCR. Job-years are an illustrative landings proxy.
