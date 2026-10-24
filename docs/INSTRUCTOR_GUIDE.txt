@@ -1,0 +1,151 @@
+FISHERIES MSE CLASSROOM LAB — INSTRUCTOR NOTES
+Model version 1.2.0
+
+OPEN THE DEMO
+Open Classroom_Age_Structured_MSE_Demo.html in a modern browser. No installation,
+internet connection or server is needed. The initial run happens automatically.
+The online and offline versions use identical code.
+
+THE MODEL'S TWO PHASES
+1. HISTORICAL POPULATION DYNAMICS
+   Start with the unfished age distribution at SSB0 = 1,000 tonnes. Apply the
+   supplied annual historical F series directly to age-specific survival and
+   Baranov catch. Beverton–Holt recruitment supplies age 1 in the next year.
+   The final historical numbers-at-age vector and spawning biomass form the
+   true starting population for every future management strategy. There is no
+   manual depletion target or rescaling at the handoff.
+2. FUTURE MANAGEMENT STRATEGY EVALUATION
+   From that historical endpoint, simulate noisy surveys, estimate population
+   state, apply a chosen HCR, implement fishing, and update the stock repeatedly.
+   Recruitment varies around the SAME Beverton–Holt mean in the projection.
+
+EDITING HISTORICAL F
+In Population dynamics, load an example history or edit Historical F time series.
+Enter 1–150 annual values, oldest first, separated by commas, spaces or newlines.
+F is instantaneous mortality per year on fully selected ages; accepted values
+are 0–3/year. Enter F values only, without a year column. For example:
+ 0, 0, 0.1, 0.2, 0.4, 0.4, 0.2, 0.1
+This supplies eight years. Entry 1 acts between historical year 0 and 1; entry 8
+acts between years 7 and 8. The historical stock graph shows states at boundaries
+0 through 8. Projection year 0 is the final historical state at boundary 8.
+Click Run history + 8 strategies after editing.
+
+Examples are increasing fishing (30 years), heavy fishing followed by lower F,
+constant F = 0.20/year, and unfished history. They are illustrative histories,
+not actual assessment data. The first two plots show F input and population
+response. Historical series CSV exports F, catch, mean recruitment, starting and
+ending SSB, and one replicate's survey and estimate.
+
+BEVERTON–HOLT RECRUITMENT AND AGE DYNAMICS
+Mean recruitment to age 1 next year:
+ R = 4 h R0 SSB / [SSB0(1-h) + (5h-1)SSB].
+This produces R0 at SSB0 and h R0 at 20% SSB0. Steepness h controls compensation.
+History uses the expected BH recruitment deterministically to make the effect of
+F clear. The recruitment-CV slider controls mean-one lognormal variability around
+this relationship in FUTURE projections. Historical F and recruitment contain no
+implementation or process noise in this classroom version.
+
+Surviving numbers move from age a to age a+1:
+ N[a+1,t+1] = N[a,t] exp[-M - F[t] selectivity[a]].
+The terminal age is a plus group retaining surviving older fish. Weight follows
+cubic von Bertalanffy growth; maturity is logistic; fishing selectivity is
+knife-edge by age. SSB = sum(N x weight x maturity). Presets illustrate an
+anchovy-like, hake-like and rockfish-like life history.
+
+HISTORICAL ESTIMATOR CONDITIONING
+At the beginning of history the manager assumes its own unfished population.
+Noisy historical spawning-biomass surveys and perfectly reported historical
+catches condition the estimator throughout history. Survey errors differ across
+replicates, but true historical population dynamics are the same. The estimator
+never receives true age classes or prescribed historical F. Each future rule
+starts from a copy of that replicate's conditioned estimated state, together
+with the common true historical endpoint. Survey timing continues across the
+handoff. Historical and future survey random streams are separate and repeatable.
+
+Estimation choices: latest survey, up-to-three-survey arithmetic mean, or a simple
+age-structured filter. The filter predicts using its own age structure, assumed M,
+expected BH recruitment and reported catch; it is not a full fitted assessment.
+Direct and averaged-survey methods carry their latest value between surveys.
+Known survey catchability q=1 and known SSB0 are simplifying assumptions.
+The manager assumes zero survey bias; the bias slider changes the true survey.
+
+EIGHT FUTURE STRATEGIES
+- Fixed catch A, B and C: independent user-selected tonnes/year.
+- Proportional catch: U x estimated SSB.
+- Biomass catch ramp: U x estimated SSB x r.
+- Smoothed catch ramp: the preceding ramp with a cap on annual advice changes.
+  The last historical catch is the baseline in future year 1. Closure overrides
+  smoothing; reopening uses raw ramp advice. With a positive previous catch,
+  the cap can require gradual reductions even when U is reduced to zero.
+- Constant F target: alpha x management-model FMSY.
+- F-based biomass ramp: alpha x management-model FMSY x r.
+Here r = clamp[(estimated SSB/SSB0 - limit)/(trigger - limit), 0, 1].
+U, F and catch in tonnes are different quantities. The FMSY multiplier alpha is
+adjustable. F targets have a ceiling of 3/year.
+
+F targets become catch advice through the Baranov equation using estimated age
+structure. The filter supplies its own age estimate. The direct and averaged
+survey methods use an assumed unfished age shape scaled to estimated SSB.
+Future intended catch receives implementation error; actual F is then solved
+against TRUE abundance. Thus realized F can differ from target F. Quotas exceeding
+the F = 3/year ceiling remain partly unfilled. Historical F is applied directly
+and does not use this HCR-to-quota inversion.
+
+REFERENCE POINTS AND OUTPUTS
+Deterministic equilibrium yield is calculated from age-specific survivorship,
+BH equilibrium recruitment and Baranov catch. Grid search plus refinement finds
+FMSY, the F maximizing this yield; MSY is its catch and SSBMSY its spawning biomass.
+Management reference points use assumed M. The F time-series plot also shows
+true-model FMSY for teaching. Historical F changes stock condition at the handoff;
+it does not alter biological equilibrium reference points when biology is fixed.
+
+The table reports future crossing risk, mean actual catch, mean absolute annual
+catch change (tonnes), and median final SSB/SSB0. Risk counts true SSB below the
+limit at least once in projection years 1 through the horizon. Historical years
+and projection-start state are not included in this risk count. Risk depends on
+horizon; zero observed crossings does not prove zero risk. Hover for a 95% Monte
+Carlo interval. Mean catch includes transients and may exceed equilibrium MSY over
+a finite projection. A fixed quota equal to MSY is not guaranteed safe with noise.
+
+Future biomass and catch bands show pointwise medians and 10th–90th percentiles
+across simulated futures, not confidence intervals for the median. The survey,
+age, F, management-year and highlighted recruitment plots use the first future.
+Historical recruits (blue) lie on the BH mean curve; future recruits (gray) scatter
+around it. The orange point follows the selected projection decision year.
+
+All strategies share common random shocks and the same historical true endpoint.
+Hold the seed fixed to compare scenarios. New random futures changes observation
+and future process/implementation shocks, but not deterministic historical truth.
+Summary CSV records the full F input series, settings, reference points and scores.
+The browser remembers the latest completed scenario on that origin.
+
+A SHORT CLASSROOM EXERCISE
+1. Compare unfished history with increasing F. Explain why their projection-start
+   biomass and age composition differ despite the same BH relationship.
+2. Paste an F series that rises and then falls. Inspect the historical stock and
+   recruitment response; compare recovery across the three life histories.
+3. Change h while keeping F fixed. Explain how recruitment compensation affects
+   historical stock decline and recovery.
+4. From the same historical population, compare fixed catches and the F rules.
+5. Increase survey noise and change estimators. Separate true stock changes from
+   differences in what the manager observes and estimates.
+
+BOUNDARIES AND SOURCE
+Illustrative combined-sex single stock, fixed growth/maturity/selectivity, no
+movement, no age-composition sampling, no economics. Historical years use mean
+recruitment, and future recruitment deviations are independent. These are not
+calibrated stock assessments or real management advice. Equations and primary
+source links are in the demo's expandable model section.
+
+src/model.js: pure population, historical F, BH, estimation, HCR and reference
+point modules. historicalPopulation() generates truth; conditionEstimator()
+uses historical data; runEnsemble() branches into future strategies.
+src/app.js: controls, web worker, SVG plots, CSV export.
+src/page.html: interface, assumptions, equations and source links.
+scripts/build.cjs: creates index.html and dist/index.html.
+tests/model.test.cjs: 21 model and stochastic consistency checks.
+
+Edit source; run: npm run build
+Verify: node --test tests/model.test.cjs
+Only Node built-in modules are required. Open index.html directly, or run npm start
+and open http://127.0.0.1:8000. The GitHub Pages workflow deploys dist/.
