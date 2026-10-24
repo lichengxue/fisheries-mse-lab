@@ -2,7 +2,7 @@
 'use strict';
 const $=id=>document.getElementById(id),api=globalThis.__mseDemo,m=globalThis.MSELab,helpers=globalThis.MSEInterface;
 const colors={catchLow:'#708c56',fixed:'#586d76',catchHigh:'#ac6b35',proportional:'#3a78a9',ramp:'#0a7a70',smooth:'#855c99',fmsy:'#b04462',framp:'#315a91'};
-const names={stock:'Stock & history',data:'Survey & estimate',rules:'Harvest rules',results:'Compare outcomes',future:'One future'};
+const names={stock:'Stock & history',data:'Survey & estimate',rules:'Harvest rules',results:'Compare outcomes',future:'One future',people:'People & value'};
 const percent=new Set(['recruitCV','surveyCV','surveyBias','harvest','limit','trigger','implementationCV','smoothCap']);
 const ranges=new Map(),shown=new Set(m.RULES.map(r=>r.id));
 let view='stock',timer,toastTimer,baseline=null,playTimer=null,playingStep=false,suppress=false,historyUndo=[],editIndex=0,dragging=false,dragChanged=false,editorScale=null;
@@ -28,7 +28,7 @@ document.querySelectorAll('[data-view]').forEach(b=>{b.addEventListener('click',
 $('toggle-controls').addEventListener('click',()=>{const open=document.body.dataset.controlsOpen!=='true';document.body.dataset.controlsOpen=String(open);$('toggle-controls').setAttribute('aria-expanded',String(open));$('toggle-controls').textContent=(open?'Hide ':'Edit ')+names[view].toLowerCase()+' settings';requestAnimationFrame(()=>{api.refresh();paint();});});
 // Pair every model slider with a typed value in classroom units.
 document.querySelectorAll('input[type=range]').forEach(input=>{
- if(input.id==='year')return;
+ if(input.id==='year'||input.closest('[data-workshop]'))return;
  const label=input.closest('label'),span=label?.querySelector('span');if(!label)return;
  const text=Array.from(span.childNodes).filter(x=>x.nodeType===Node.TEXT_NODE).map(x=>x.textContent).join('').trim();
  label.htmlFor=input.id;input.setAttribute('aria-label',text);
@@ -91,11 +91,11 @@ let annualEditing=false;
 $('edit-f').addEventListener('focus',()=>annualEditing=false);
 $('edit-f').addEventListener('input',()=>{const F=safeHistory(),el=$('edit-f');if(!F||el.value===''||!el.checkValidity()){el.setAttribute('aria-invalid','true');return;}el.removeAttribute('aria-invalid');if(F[editIndex]===+el.value)return;if(!annualEditing){pushUndo();annualEditing=true;}F[editIndex]=+el.value;setHistory(F,{remember:false});});
 function node(tag,attrs={},text){const el=document.createElementNS('http://www.w3.org/2000/svg',tag);Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,v));if(text!==undefined)el.textContent=text;return el;}
-function axes(id,{xMin=0,xMax=1,yMax=1,xTitle='',yTitle='',title='',percentY=false,percentX=false,integerX=false}={}){
+function axes(id,{xMin=0,xMax=1,yMin=0,yMax=1,xTitle='',yTitle='',title='',percentY=false,percentX=false,integerX=false}={}){
  const box=$(id);if(!box||!box.clientWidth)return null;const width=Math.max(240,box.clientWidth),height=box.clientHeight||300,left=62,right=18,top=20,bottom=52,W=width-left-right,H=height-top-bottom;
  const svg=node('svg',{viewBox:`0 0 ${width} ${height}`,width,height,role:'img','aria-label':title});svg.append(node('title',{},title));box.replaceChildren(svg);
- const X=x=>left+(x-xMin)/(xMax-xMin||1)*W,Y=y=>top+H-y/yMax*H;
- for(let i=0;i<=4;i++){const y=yMax*i/4;svg.append(node('line',{x1:left,y1:Y(y),x2:left+W,y2:Y(y),stroke:'#dce6e7'}));svg.append(node('text',{x:left-8,y:Y(y)+4,'text-anchor':'end'},n(y,Number.isInteger(Math.round(y*1e9)/1e9)?0:Math.abs(y)<1?2:1)+(percentY?'%':'')));}
+ const X=x=>left+(x-xMin)/(xMax-xMin||1)*W,Y=y=>top+H-(y-yMin)/(yMax-yMin||1)*H;
+ for(let i=0;i<=4;i++){const y=yMin+(yMax-yMin)*i/4;svg.append(node('line',{x1:left,y1:Y(y),x2:left+W,y2:Y(y),stroke:'#dce6e7'}));svg.append(node('text',{x:left-8,y:Y(y)+4,'text-anchor':'end'},n(y,Number.isInteger(Math.round(y*1e9)/1e9)?0:Math.abs(y)<1?2:1)+(percentY?'%':'')));}
  const ticks=width<380?3:4,seen=new Set();for(let i=0;i<=ticks;i++){let x=xMin+(xMax-xMin)*i/ticks;if(integerX)x=Math.max(Math.ceil(xMin),Math.min(Math.floor(xMax),Math.round(x)));if(seen.has(x))continue;seen.add(x);svg.append(node('text',{x:X(x),y:top+H+20,'text-anchor':'middle'},n(x,Number.isInteger(Math.round(x*1e9)/1e9)?0:Math.abs(x)<1?2:1)+(percentX?'%':'')));}
  svg.append(node('text',{x:left+W/2,y:height-7,'text-anchor':'middle',class:'axis-title'},xTitle));svg.append(node('text',{x:15,y:top+H/2,transform:`rotate(-90,15,${top+H/2})`,'text-anchor':'middle',class:'axis-title'},yTitle));
  const clipId=id+'-new-clip',defs=node('defs'),clip=node('clipPath',{id:clipId});clip.append(node('rect',{x:left,y:top,width:W,height:H}));defs.append(clip);svg.append(defs);const marks=node('g',{'clip-path':`url(#${clipId})`});svg.append(marks);return{svg,marks,X,Y,width,height,left,top,W,H,xMin,xMax,yMax};
@@ -128,9 +128,9 @@ function apply(c){clearTimeout(timer);stopPlayback();suppress=true;api.applyConf
 $('reset-scenario').addEventListener('click',()=>{apply({...m.DEFAULTS,historicalF:m.DEFAULTS.historicalF.slice()});$('historyPreset').value='development';showView('stock');toast('Classroom defaults restored.');});
 document.querySelectorAll('[data-scenario]').forEach(b=>b.addEventListener('click',()=>{const c={...m.DEFAULTS};let key='stock';if(b.dataset.scenario==='rebuild'){c.species='long';c.historicalF=m.historicalPreset('rebuilding');c.years=100;c.rule='framp';}if(b.dataset.scenario==='noise'){c.surveyCV=.5;c.surveyEvery=2;c.estimator='direct';key='data';}if(b.dataset.scenario==='catch'){c.species='short';const ref=m.referencePoints(m.makeStock('short'),c);c.catchLow=Math.round(ref.MSY*.5);c.fixedCatch=Math.round(ref.MSY);c.catchHigh=Math.round(ref.MSY*1.5);key='results';}apply(c);showView(key);toast('Classroom scenario loaded.');}));
 $('msy-catches').addEventListener('click',()=>{try{const c=api.configuration(),ref=m.referencePoints(m.makeStock(c.species,c.Mfactor),c);['catchLow','fixedCatch','catchHigh'].forEach((id,i)=>{$(id).value=Math.min(1000,Math.round(ref.MSY*[.5,1,1.5][i]));});emit($('fixedCatch'));syncControls();toast('Catch levels set using the current management-model MSY.');}catch(e){toast(e.message);}});
-$('save-scenario').addEventListener('click',()=>{try{saveFile(JSON.stringify({format:'fisheries-mse-scenario',interfaceVersion:'1.3.0',config:api.configuration()},null,2),'application/json','fisheries-mse-scenario.json');}catch(e){toast(e.message);}});
+$('save-scenario').addEventListener('click',()=>{try{saveFile(JSON.stringify({format:'fisheries-mse-scenario',interfaceVersion:'1.4.0',config:api.configuration(),workshop:globalThis.MSEWorkshop?.getState()},null,2),'application/json','fisheries-mse-scenario.json');}catch(e){toast(e.message);}});
 $('load-scenario').addEventListener('click',()=>$('scenario-file').click());
-$('scenario-file').addEventListener('change',async()=>{const file=$('scenario-file').files[0];if(!file)return;try{if(file.size>1e6)throw Error('Choose a scenario smaller than 1 MB.');const data=JSON.parse(await file.text());apply(m.check(data.config||data));toast('Saved scenario loaded.');}catch(e){toast('Could not load the scenario: '+e.message);}finally{$('scenario-file').value='';}});
+$('scenario-file').addEventListener('change',async()=>{const file=$('scenario-file').files[0];if(!file)return;try{if(file.size>5e6)throw Error('Choose a scenario smaller than 5 MB.');const data=JSON.parse(await file.text());const config=m.check(data.config||data);if(data.workshop)globalThis.MSEWorkshop?.loadState(data.workshop);apply(config);toast('Saved scenario loaded.');}catch(e){toast('Could not load the scenario: '+e.message);}finally{$('scenario-file').value='';}});
 // Comparison views show common-rule outcomes, rather than just a selected path.
 $('strategy-toggles').innerHTML=m.RULES.map(r=>`<label><input type="checkbox" data-show-rule="${r.id}" checked><i style="background:${colors[r.id]}"></i>${esc(r.short)}</label>`).join('');
 $('strategy-toggles').addEventListener('change',e=>{const id=e.target.dataset.showRule;if(!id)return;e.target.checked?shown.add(id):shown.delete(id);drawComparisons();});
@@ -174,5 +174,6 @@ document.querySelectorAll('.figure').forEach(figure=>{if(!figure.querySelector('
 $('close-plot').addEventListener('click',()=>$('plot-dialog').close());$('plot-dialog').addEventListener('click',e=>{if(e.target===$('plot-dialog'))$('plot-dialog').close();});
 function paint(){drawEditor();drawSurvey();drawMetrics();drawComparisons();updateState();}
 let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{api.refresh();paint();},120);});
+globalThis.MSEViews={showView,axes,poly,hline,colors,saveFile,toast};
 syncControls();updateState();paint();
 })();

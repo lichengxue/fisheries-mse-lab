@@ -1,7 +1,7 @@
-/* Classroom MSE model, version 1.2.0. Historical F drives an age-based BH population. */
+/* Classroom MSE model, version 1.3.0. Historical F drives an age-based BH population. */
 (function (root) {
   'use strict';
-  const VERSION = '1.2.0';
+  const VERSION = '1.3.0';
   const PRESETS = {
     short: {name:'Short lived', example:'Anchovy-like', A:7, M:0.90, k:0.75, winf:0.10, mat50:1.5, matSlope:3, selectAge:1},
     medium:{name:'Medium lived',example:'Hake-like',A:16,M:0.25,k:0.25,winf:2.0,mat50:3,matSlope:1.8,selectAge:4},
@@ -253,7 +253,9 @@
       const x=runs[rule.id],crossings=x.filter(t=>t.crossed).length;
       const catchLevel={catchLow:c.catchLow,fixed:c.fixedCatch,catchHigh:c.catchHigh}[rule.id];
       const name=catchLevel===undefined?rule.name:rule.name+' · '+catchLevel+' t';
-      return {...rule,name,metrics:{risk:crossings/c.reps,crossings,riskInterval:wilson(crossings,c.reps),
+      const economicTrials={catch:new Float64Array(c.reps*c.years),F:new Float64Array(c.reps*c.years)};
+      x.forEach((trial,j)=>{economicTrials.catch.set(trial.catch,j*c.years);economicTrials.F.set(trial.F,j*c.years);});
+      return {...rule,name,economicTrials,metrics:{risk:crossings/c.reps,crossings,riskInterval:wilson(crossings,c.reps),
         meanCatch:sum(x.map(t=>t.meanCatch))/c.reps,change:sum(x.map(t=>t.change))/c.reps,
         terminal:quantile(x.map(t=>t.ssb[c.years]/stock.S0),.5),closed:sum(x.map(t=>t.closed))/c.reps,
         capFraction:sum(x.map(t=>t.capped))/(c.reps*c.years)},
