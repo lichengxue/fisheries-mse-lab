@@ -9,7 +9,10 @@ const num=(n,d=1)=>Number(n).toLocaleString(undefined,{minimumFractionDigits:d,m
 const pct=(n,d=0)=>num(100*n,d)+'%';
 const fmt=n=>Math.abs(n)>=1000?num(n,0):Math.abs(n)>=100?num(n,0):Math.abs(n)>=10?num(n,1):num(n,2);
 const escape=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function configuration(){const v={rule:selected};for(const k of fields)v[k]=k==='historicalF'?m.parseHistoricalF($(k).value):['species','estimator'].includes(k)?$(k).value:+$(k).value;return m.check(v);}
+function configuration(){
+ for(const el of document.querySelectorAll('input[type=number][data-companion]'))if(el.value===''||!el.checkValidity())throw Error('Check '+el.getAttribute('aria-label')+'. Enter a value between '+el.min+' and '+el.max+'.');
+ const v={rule:selected};for(const k of fields){const el=$(k);if(el.type==='number'&&(el.value===''||!el.checkValidity()))throw Error('Check '+(el.getAttribute('aria-label')||k)+'. Enter a value between '+el.min+' and '+el.max+'.');v[k]=k==='historicalF'?m.parseHistoricalF(el.value):['species','estimator'].includes(k)?el.value:+el.value;}return m.check(v);
+}
 function descriptions(){
  for(const k of ['recruitCV','surveyCV','harvest','limit','trigger','implementationCV'])$(k+'-value').textContent=pct(+$(k).value);
  $('surveyBias-value').textContent=(+$('surveyBias').value>0?'+':'')+pct(+$('surveyBias').value);
@@ -24,14 +27,14 @@ function descriptions(){
  $('rule-note').textContent={catchLow:`Catch advice stays at ${$('catchLow').value} t/year.`,fixed:`Catch advice stays at ${$('fixedCatch').value} t/year.`,catchHigh:`Catch advice stays at ${$('catchHigh').value} t/year.`,proportional:'Catch advice is the harvest fraction × estimated spawning biomass.',ramp:`Advice declines below ${pct(+$('trigger').value)} unfished SSB and reaches zero at ${pct(+$('limit').value)}.`,smooth:`The ramp’s advice changes by at most ±${pct(+$('smoothCap').value)} per year, with a closure override and reopening exception.`,fmsy:'Targets a chosen multiple of model FMSY each year. Estimated abundance converts the F target into catch advice.',framp:'Reduces the F target between the biomass trigger and limit, with closure at the limit. Estimated abundance converts F into catch advice.'}[selected];
 }
 function setStatus(message,error=false){$('status').textContent=message;$('status').classList.toggle('error',error);}
-function markDirty(){dirty=true;descriptions();if(!busy)setStatus('Settings changed. Run the eight strategies to apply them.');}
+function markDirty(){dirty=true;descriptions();$('csv').disabled=true;$('history-csv').disabled=true;if(!busy)setStatus('Settings changed. Update the simulation to apply them.');document.dispatchEvent(new CustomEvent('mse:dirty'));}
 function progress(v){$('progress-fill').style.width=(100*v)+'%';document.querySelector('.progress').setAttribute('aria-valuenow',String(Math.round(100*v)));}
 function run(){
- let c;try{c=configuration();}catch(e){setStatus(e.message,true);return;}
+ let c;try{c=configuration();}catch(e){setStatus(e.message,true);document.dispatchEvent(new CustomEvent('mse:error'));return;}
  if(worker){worker.terminate();worker=null;}
- const id=++token;busy=true;dirty=false;$('run').disabled=true;$('csv').disabled=true;$('history-csv').disabled=true;progress(0);setStatus('Applying historical F, conditioning the estimator, then comparing eight future strategies…');
- const done=r=>{if(id!==token)return;result=r;busy=false;$('run').disabled=false;$('csv').disabled=false;$('history-csv').disabled=false;progress(1);$('year').max=c.years;$('year').value=Math.min(+$('year').value,c.years);setStatus(dirty?'Completed. Settings changed during the run; run again to apply them.':`Completed ${c.historicalF.length} historical years, then ${c.reps.toLocaleString()} futures × ${c.years} years per strategy.`);render();try{localStorage.setItem('mse-classroom-v3',JSON.stringify({...c,rule:selected}));}catch{};};
- const fail=e=>{if(id!==token)return;busy=false;$('run').disabled=false;setStatus('The run could not finish: '+e.message,true);};
+ const id=++token;busy=true;dirty=false;$('run').disabled=true;$('csv').disabled=true;$('history-csv').disabled=true;progress(0);setStatus('Applying historical F, conditioning the estimator, then comparing eight future strategies…');document.dispatchEvent(new CustomEvent('mse:start'));
+ const done=r=>{if(id!==token)return;worker?.terminate();worker=null;result=r;busy=false;$('run').disabled=false;$('csv').disabled=dirty;$('history-csv').disabled=dirty;progress(1);$('year').max=c.years;$('year').value=Math.min(+$('year').value,c.years);setStatus(dirty?'Completed. Settings changed during the run; update to apply them.':`Completed ${c.historicalF.length} historical years, then ${c.reps.toLocaleString()} futures × ${c.years} years per strategy.`);render();document.dispatchEvent(new CustomEvent('mse:result'));try{localStorage.setItem('mse-classroom-v3',JSON.stringify({...c,rule:selected}));}catch{};};
+ const fail=e=>{if(id!==token)return;busy=false;$('run').disabled=false;setStatus('The run could not finish: '+e.message,true);document.dispatchEvent(new CustomEvent('mse:error'));};
  try{
   const source=$('mse-model').textContent+`\nself.onmessage=e=>{try{const r=MSELab.runEnsemble(e.data,p=>postMessage({type:'progress',value:p}));postMessage({type:'result',value:r});}catch(err){postMessage({type:'error',message:err.message});}};`;
   const url=URL.createObjectURL(new Blob([source],{type:'text/javascript'}));worker=new Worker(url);URL.revokeObjectURL(url);
@@ -170,7 +173,7 @@ function renderCharts(){
  // Keep line and band legends consistent with the chosen strategy.
  document.querySelectorAll('.legend .sample[data-policy-color]').forEach(x=>x.style.background=col);
 }
-function render(){if(!result)return;renderTable();renderTrace();renderCharts();}
+function render(){if(!result)return;renderTable();renderTrace();renderCharts();document.dispatchEvent(new CustomEvent('mse:render'));}
 function downloadCSV(head,rows,filename){
  const csv=[head,...rows].map(row=>row.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\r\n');
  const a=document.createElement('a'),url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
@@ -197,7 +200,10 @@ $('new-seed').addEventListener('click',()=>{$('seed').value=(Math.random()*42949
 $('year').addEventListener('input',()=>{if(result){renderTrace();renderCharts();}});
 $('next').addEventListener('click',()=>{$('year').value=Math.min(+$('year').max,+$('year').value+1);renderTrace();renderCharts();});
 $('preset-table').innerHTML=Object.entries(m.PRESETS).map(([k,v])=>`<tr><td>${v.name} (${v.example.toLowerCase()})</td><td>${v.A}+</td><td>${num(v.M,2)}</td><td>${num(v.k,2)}</td><td>${v.mat50}</td><td>${v.selectAge}</td></tr>`).join('');
-let resizeTimer;new ResizeObserver(()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(renderCharts,90);}).observe(document.querySelector('.plots'));
+let resizeTimer;new ResizeObserver(()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(renderCharts,90);}).observe(document.querySelector('.main'));
 descriptions();run();
-globalThis.__mseDemo={get result(){return result;},get busy(){return busy;},get dirty(){return dirty;},run,chooseRule,configuration,summaryCSV};
+globalThis.__mseDemo={get result(){return result;},get busy(){return busy;},get dirty(){return dirty;},get selected(){return selected;},run,chooseRule,configuration,summaryCSV,refresh:render,markDirty,
+ applyConfiguration(input){const c=m.check(input);for(const k of fields)$(k).value=k==='historicalF'?c[k].join(', '):c[k];selected=m.RULES.some(r=>r.id===input.rule)?input.rule:'framp';$('rule').value=selected;$('historyPreset').value='custom';markDirty();document.dispatchEvent(new CustomEvent('mse:configuration'));},
+ cancel(){token++;worker?.terminate();worker=null;busy=false;dirty=true;$('run').disabled=false;setStatus('Run stopped. Update the simulation when ready.');document.dispatchEvent(new CustomEvent('mse:dirty'));}
+};
 })();
