@@ -1,0 +1,14 @@
+{
+  "name": "fisheries-mse-lab",
+  "version": "1.2.0",
+  "private": true,
+  "description": "A standalone age-structured fisheries MSE teaching GUI with historical F and Beverton-Holt recruitment.",
+  "scripts": {
+    "build": "node scripts/build.cjs",
+    "test": "node --test tests/model.test.cjs",
+    "start": "node scripts/serve.cjs"
+  },
+  "engines": {"node": ">=20"},
+  "dependencies": {},
+  "devDependencies": {}
+}
