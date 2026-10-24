@@ -1,3 +1,19 @@
+INTERFACE 1.3 — QUICK CLASSROOM WORKFLOW
+
+Use the five sections across the top. On a small screen, open “Edit … settings” when controls are needed.
+
+1. STOCK & HISTORY: Choose a life history. Use the shape builder (constant F, ramp, or rise then rebuilding), drag the annual F bars, or type an exact year/F value. Undo restores the preceding history. CSV import accepts F alone, year/F pairs, or this app's historical export.
+2. SURVEY & ESTIMATE: Sliders have numeric companions. The survey illustration isolates measurement error by repeatedly sampling a fixed 1,000 t stock. The adjacent projection plot shows actual simulated observations and estimation.
+3. HARVEST RULES: Edit catch levels or use the MSY button to set A/B/C to 0.5/1/1.5 times model MSY. F-target shortcut buttons select 0.75, 1 or 1.25 times FMSY.
+4. COMPARE OUTCOMES: Inspect catch against crossing risk and compare median trajectories for all eight rules. Pin a completed run before changing one assumption; the same rule's baseline is shown with a dark dashed line and metric deltas. This baseline is kept for the current page session.
+5. ONE FUTURE: Use the year slider, year number, Previous/Next, or Play years. This scrubs an already-computed individual future without changing its random draws.
+
+Auto update refreshes the ensemble after a short pause in editing. Switch it off to batch changes, then press Update simulation. “Changes waiting to run” means the plots still show the preceding completed settings. Save/Load scenario transfers validated JSON settings. SVG buttons export the plotted scientific graphic; the enlarge button opens a larger view. Summary and historical CSV exports remain available.
+
+The scientific model and all definitions below are unchanged from model 1.2.0. Interface 1.3.0 adds the controls and comparison views described above.
+
+--------------------------------------------------------------------
+
 FISHERIES MSE CLASSROOM LAB — INSTRUCTOR NOTES
 Model version 1.2.0
 
@@ -28,7 +44,7 @@ are 0–3/year. Enter F values only, without a year column. For example:
 This supplies eight years. Entry 1 acts between historical year 0 and 1; entry 8
 acts between years 7 and 8. The historical stock graph shows states at boundaries
 0 through 8. Projection year 0 is the final historical state at boundary 8.
-Click Run history + 8 strategies after editing.
+Click Update simulation after editing.
 
 Examples are increasing fishing (30 years), heavy fishing followed by lower F,
 constant F = 0.20/year, and unfished history. They are illustrative histories,
