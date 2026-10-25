@@ -9,14 +9,14 @@ function field(id,label){const input=$(id),wrapper=input?.closest('label'),span=
 function intro(id,title,description){text('#view-'+id+' .view-intro h2',title);text('#view-'+id+' .view-intro h2+p',description);}
 function caption(id,value){const figure=$(id).closest('figure'),old=figure.querySelector('figcaption');if(old)old.hidden=true;const p=document.createElement('p');p.className='caption';p.textContent=value;figure.append(p);}
 function next(id,label,target){const row=document.createElement('div'),b=document.createElement('button');row.className='lesson-next';b.className='btn primary';b.type='button';b.textContent=label+' →';b.addEventListener('click',()=>V.showView(target));row.append(b);$('view-'+id).append(row);}
-for(const [id,label]of Object.entries({stock:'Fish stock',data:'Survey',assessment:'Assessment',rules:'Fishing rules',results:'Compare',future:'One future',people:'People & money'})){const b=$('tab-'+id),number=b.querySelector('span');b.replaceChildren(number,document.createTextNode(label));}
+for(const [id,label]of Object.entries({stock:'Fish stock',data:'Survey',assessment:'Assessment',rules:'Fishing rules',results:'Compare',future:'History & feedback',people:'People & money'})){const b=$('tab-'+id),number=b.querySelector('span');b.replaceChildren(number,document.createTextNode(label));}
 text('.mast h1','Fisheries MSE lab');text('.mast>div>p:last-child','Test fishing rules in a simulated fishery. This is management strategy evaluation (MSE).');
 all('.view-badge,.view-intro .eyebrow').forEach(el=>el.hidden=true);
 intro('stock','How does fishing change a fish stock?','Choose a fish and a fishing history. Drag a bar to change fishing pressure and watch the stock respond.');
 intro('data','What does the survey tell us?','One visit can give an abundance index, a sample of fish ages, or both.');
 intro('rules','How should fishing respond?','Choose a rule above. Adjust its settings and see how it responds when the stock changes.');
 intro('results','What are the trade-offs among MPs?','An MP (management procedure) combines the survey, assessment and fishing rule. Compare the trade-offs across goals; there may be no single best choice.');
-intro('future','What happens year by year?','Press Play feedback to watch assessments renew catch advice, then follow the fish until the next assessment.');
+intro('future','How do MPs change the future?','Choose MPs, then watch their population paths separate after the shared history.');
 intro('people','Who benefits, and what matters?','Explore income and jobs. Then discuss the trade-offs with different groups.');
 text('[data-control-panel=stock] .control-heading','Choose your fish');
 text('[data-control-panel=data] .control-heading','Measure the stock');
@@ -70,8 +70,8 @@ const futureExtra=[$('age-chart').closest('figure'),$('f-chart').closest('figure
 $('biomass-chart').closest('figure').querySelector('h3').textContent='How SSB changes';$('catch-chart').closest('figure').querySelector('h3').textContent='How catch changes';
 caption('biomass-chart','The colored line is the middle outcome. The shaded band contains 8 in 10 simulated outcomes. The thin line follows one future.');
 caption('catch-chart','Catch is what is actually taken, which can differ from the advice. The shaded band contains 8 in 10 simulated outcomes.');
-all('#view-future .legend').forEach(legend=>legend.hidden=true);
-text('#trace-title','Watch the feedback cycle');text('#view-future .trace-head .subtle','The manager sees surveys and catch reports. You can also see the true stock.');
+all('#view-future .legend:not([data-timeline-legend])').forEach(legend=>legend.hidden=true);
+text('#trace-title','Selected MP details');text('#view-future .trace-head .subtle','The manager sees surveys and catch reports. You can also see the true stock.');
 all('[data-control-panel=future] .neutral-note').forEach(el=>el.hidden=true);
 const econ=$('economic-settings');text('#economic-settings>p','Try changing price, costs or the share of catch going to small vessels.');
 text('#workshop-settings>p','Choose a group card, then set what matters to that group.');

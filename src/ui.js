@@ -2,7 +2,7 @@
 'use strict';
 const $=id=>document.getElementById(id),api=globalThis.__mseDemo,m=globalThis.MSELab,helpers=globalThis.MSEInterface;
 const colors=globalThis.MSEVisuals.ruleColors;
-const names={stock:'Fish stock',data:'Survey',assessment:'Assessment',rules:'Fishing rules',results:'Compare',future:'One future',people:'People & money'};
+const names={stock:'Fish stock',data:'Survey',assessment:'Assessment',rules:'Fishing rules',results:'Compare',future:'History & feedback',people:'People & money'};
 const percent=new Set(['recruitCV','surveyCV','surveyBias','assessmentProcessCV','harvest','limit','trigger','implementationCV','smoothCap']);
 const ranges=new Map(),shown=new Set(m.RULES.map(r=>r.id));
 let view='stock',timer,toastTimer,baseline=null,playTimer=null,playingStep=false,suppress=false,historyUndo=[],editIndex=0,dragging=false,dragChanged=false,editorScale=null;
@@ -12,14 +12,14 @@ const esc=v=>String(v).replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;'
 function toast(message){$('toast').textContent=message;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').hidden=true,4500);}
 function emit(el,type='input'){el.dispatchEvent(new Event(type,{bubbles:true}));}
 function saveFile(content,type,name){const a=document.createElement('a'),url=URL.createObjectURL(new Blob([content],{type}));a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);}
-function stopPlayback(){clearInterval(playTimer);playTimer=null;if(globalThis.MSEFeedback)globalThis.MSEFeedback.stop();else $('play').textContent='Play feedback';}
+function stopPlayback(){clearInterval(playTimer);playTimer=null;if(globalThis.MSEFeedback)globalThis.MSEFeedback.stop();else $('play').textContent='Play timeline';}
 function showView(key,scroll=true){
  if(!names[key])return;view=key;stopPlayback();
  document.body.dataset.controlsOpen='false';$('toggle-controls').setAttribute('aria-expanded','false');
  document.querySelectorAll('[data-view]').forEach(b=>{const active=b.dataset.view===key;b.setAttribute('aria-selected',String(active));b.tabIndex=active?0:-1;});
  document.querySelectorAll('.view-panel').forEach(s=>s.hidden=s.id!=='view-'+key);
  document.querySelectorAll('[data-control-panel]').forEach(s=>s.hidden=s.dataset.controlPanel!==key);
- $('inspect-bar').hidden=key==='stock';
+ $('inspect-bar').hidden=key==='stock'||key==='future';
  $('toggle-controls').textContent='Edit '+names[key].toLowerCase()+' settings';
  requestAnimationFrame(()=>{api.refresh();paint();});
  if(scroll)window.scrollTo({top:document.querySelector('.flow-nav').offsetTop,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
@@ -28,7 +28,7 @@ document.querySelectorAll('[data-view]').forEach(b=>{b.addEventListener('click',
 $('toggle-controls').addEventListener('click',()=>{const open=document.body.dataset.controlsOpen!=='true';document.body.dataset.controlsOpen=String(open);$('toggle-controls').setAttribute('aria-expanded',String(open));$('toggle-controls').textContent=(open?'Hide ':'Edit ')+names[view].toLowerCase()+' settings';requestAnimationFrame(()=>{api.refresh();paint();});});
 // Pair every model slider with a typed value in classroom units.
 document.querySelectorAll('input[type=range]').forEach(input=>{
- if(input.id==='year'||input.closest('[data-workshop]'))return;
+ if(input.id==='year'||input.hasAttribute('data-timeline')||input.closest('[data-workshop]'))return;
  const label=input.closest('label'),span=label?.querySelector('span');if(!label)return;
  const text=Array.from(span.childNodes).filter(x=>x.nodeType===Node.TEXT_NODE).map(x=>x.textContent).join('').trim();
  label.htmlFor=input.id;input.setAttribute('aria-label',text);
@@ -128,9 +128,9 @@ function apply(c){clearTimeout(timer);stopPlayback();suppress=true;api.applyConf
 $('reset-scenario').addEventListener('click',()=>{apply({...m.DEFAULTS,historicalF:m.DEFAULTS.historicalF.slice()});$('historyPreset').value='development';showView('stock');toast('Classroom defaults restored.');});
 document.querySelectorAll('[data-scenario]').forEach(b=>b.addEventListener('click',()=>{const c={...m.DEFAULTS};let key='stock';if(b.dataset.scenario==='rebuild'){c.species='long';c.historicalF=m.historicalPreset('rebuilding');c.years=100;c.rule='framp';}if(b.dataset.scenario==='noise'){c.surveyCV=.5;c.surveyEvery=2;c.estimator='direct';key='data';}if(b.dataset.scenario==='catch'){c.species='short';const ref=m.referencePoints(m.makeStock('short'),c);c.catchLow=Math.round(ref.MSY*.5);c.fixedCatch=Math.round(ref.MSY);c.catchHigh=Math.round(ref.MSY*1.5);key='results';}apply(c);showView(key);toast('Classroom scenario loaded.');}));
 $('msy-catches').addEventListener('click',()=>{try{const c=api.configuration(),ref=m.referencePoints(m.makeStock(c.species,c.Mfactor),c);['catchLow','fixedCatch','catchHigh'].forEach((id,i)=>{$(id).value=Math.min(1000,Math.round(ref.MSY*[.5,1,1.5][i]));});emit($('fixedCatch'));syncControls();toast('Catch levels set using the current management-model MSY.');}catch(e){toast(e.message);}});
-$('save-scenario').addEventListener('click',()=>{try{saveFile(JSON.stringify({format:'fisheries-mse-scenario',interfaceVersion:'1.9.0',config:api.configuration(),workshop:globalThis.MSEWorkshop?.getState(),comparison:globalThis.MSETradeoffView?.getState()},null,2),'application/json','fisheries-mse-scenario.json');}catch(e){toast(e.message);}});
+$('save-scenario').addEventListener('click',()=>{try{saveFile(JSON.stringify({format:'fisheries-mse-scenario',interfaceVersion:'1.10.0',config:api.configuration(),workshop:globalThis.MSEWorkshop?.getState(),comparison:globalThis.MSETradeoffView?.getState(),timeline:globalThis.MSEFeedback?.getState()},null,2),'application/json','fisheries-mse-scenario.json');}catch(e){toast(e.message);}});
 $('load-scenario').addEventListener('click',()=>$('scenario-file').click());
-$('scenario-file').addEventListener('change',async()=>{const file=$('scenario-file').files[0];if(!file)return;try{if(file.size>5e6)throw Error('Choose a scenario smaller than 5 MB.');const data=JSON.parse(await file.text());const config=m.check(data.config||data);if(data.comparison)globalThis.MSETradeoffView?.loadState(data.comparison);if(data.workshop)globalThis.MSEWorkshop?.loadState(data.workshop);apply(config);toast('Saved scenario loaded.');}catch(e){toast('Could not load the scenario: '+e.message);}finally{$('scenario-file').value='';}});
+$('scenario-file').addEventListener('change',async()=>{const file=$('scenario-file').files[0];if(!file)return;try{if(file.size>5e6)throw Error('Choose a scenario smaller than 5 MB.');const data=JSON.parse(await file.text());const config=m.check(data.config||data);if(data.comparison)globalThis.MSETradeoffView?.loadState(data.comparison);if(data.workshop)globalThis.MSEWorkshop?.loadState(data.workshop);if(data.timeline)globalThis.MSEFeedback?.loadState(data.timeline);apply(config);toast('Saved scenario loaded.');}catch(e){toast('Could not load the scenario: '+e.message);}finally{$('scenario-file').value='';}});
 // Comparison views show common-rule outcomes, rather than just a selected path.
 $('strategy-toggles').innerHTML=m.RULES.map(r=>`<label><input type="checkbox" data-show-rule="${r.id}" checked><i style="background:${colors[r.id]}"></i>${esc(r.short)}</label>`).join('');
 $('strategy-toggles').addEventListener('change',e=>{const id=e.target.dataset.showRule;if(!id)return;e.target.checked?shown.add(id):shown.delete(id);drawComparisons();});
@@ -174,10 +174,10 @@ $('play').addEventListener('click',()=>{if(globalThis.MSEFeedback){globalThis.MS
 function exportSVG(figure){const source=figure.querySelector('.chart svg,.history-editor svg');if(!source)return null;const svg=source.cloneNode(true),vb=source.viewBox.baseVal,title=figure.querySelector('h3')?.textContent||'Fisheries MSE plot';
  const legend=Array.from(figure.querySelectorAll('.legend>span')).filter(s=>!s.hidden).map(s=>s.textContent.trim()).join(' · '),width=vb.width||source.width.baseVal.value,height=vb.height||source.height.baseVal.value,font=document.documentElement.dataset.textSize==='large'?16:14;
  function wrap(value,size){const lines=[];let line='';for(const word of value.split(/\s+/)){if(line&&(line+' '+word).length*size*.58>width-28){lines.push(line);line=word;}else line+=(line?' ':'')+word;}if(line)lines.push(line);return lines;}
- const titleLines=wrap(title,font+4),legendLines=wrap(legend,font),header=20+titleLines.length*(font+8)+legendLines.length*(font+5)+12;
+ const timelineKeys=Array.from(figure.querySelectorAll('[data-timeline-legend]>span')),titleLines=wrap(title,font+4),legendLines=timelineKeys.length?timelineKeys.map(el=>el.textContent.trim()):wrap(legend,font),header=20+titleLines.length*(font+8)+legendLines.length*(font+5)+12;
  svg.setAttribute('xmlns','http://www.w3.org/2000/svg');svg.setAttribute('viewBox',`0 0 ${width} ${height+header+16}`);svg.setAttribute('width',width);svg.setAttribute('height',height+header+16);
  const content=node('g',{transform:`translate(0,${header})`});while(svg.firstChild)content.append(svg.firstChild);svg.append(node('rect',{width,height:height+header+16,fill:'#fff'}));const style=node('style',{},`text{font-family:Arial,sans-serif;font-size:${font}px;fill:#4c636d}.axis-title{font-size:${font+1}px;fill:#173541}.grid{stroke:#e1e9eb}.frame{fill:none;stroke:#cad8dc}.tick{stroke:#aebfc6}`);svg.append(style);
- let y=font+8;titleLines.forEach(line=>{const t=node('text',{x:14,y,'font-weight':700},line);t.style.fontSize=(font+4)+'px';svg.append(t);y+=font+8;});legendLines.forEach(line=>{svg.append(node('text',{x:14,y:y+2},line));y+=font+5;});svg.append(content);return{svg,title};
+ let y=font+8;titleLines.forEach(line=>{const t=node('text',{x:14,y,'font-weight':700},line);t.style.fontSize=(font+4)+'px';svg.append(t);y+=font+8;});legendLines.forEach((line,i)=>{if(timelineKeys.length){const key=timelineKeys[i].querySelector('i');svg.append(node('line',{x1:14,x2:40,y1:y-font/3,y2:y-font/3,stroke:key.style.borderColor,'stroke-width':3,'stroke-dasharray':key.dataset.dash||''}));}svg.append(node('text',{x:timelineKeys.length?48:14,y:y+2},line));y+=font+5;});svg.append(content);return{svg,title};
 }
 
 document.querySelectorAll('.figure').forEach(figure=>{if(!figure.querySelector('.chart,.history-editor'))return;const tools=document.createElement('div');tools.className='plot-tools';tools.innerHTML='<button type="button" data-plot-action="expand" aria-label="Enlarge this plot">↗</button><button type="button" data-plot-action="save" aria-label="Download this plot as SVG">SVG ↓</button>';figure.append(tools);tools.addEventListener('click',e=>{const action=e.target.dataset.plotAction;if(!action)return;const out=exportSVG(figure);if(!out){toast('Run a simulation to populate this plot.');return;}if(action==='save')saveFile(new XMLSerializer().serializeToString(out.svg),'image/svg+xml',out.title.toLowerCase().replace(/[^a-z0-9]+/g,'-')+'.svg');else{$('expanded-title').textContent=out.title;$('expanded-plot').replaceChildren(out.svg);$('plot-dialog').showModal();}});});
