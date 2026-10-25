@@ -19,7 +19,7 @@ People & money, Income & jobs and Stakeholder discussion.
 --------------------------------------------------------------------
 
 PEOPLE & VALUE: A CLASSROOM MSE WORKSHOP
-Interface 1.7.0 / age-structured model 1.4.0
+Interface 1.8.0 / age-structured model 1.4.0
 
 Open section 7, People & money. The Economics & livelihoods and Stakeholder
 workshop buttons switch between accounting outcomes and deliberation tools.
@@ -145,3 +145,11 @@ https://wildlife.ca.gov/Conservation/Marine/MLMA/Master-Plan/Mgmt-Strategy-Eval
 SURVEY DATA IN VERSION 1.7
 Survey costs count visits whether they collect an index, ages, or both.
 Age-sample size does not add a separate ageing cost in this version.
+
+
+COMPARE GOALS IN INTERFACE 1.8
+The Compare radar uses the same five criterion scores and class targets as this
+workshop. Edit a target in either place and both displays update. It shows
+separate objectives, without role weights, votes or an overall area ranking.
+The two-goal view compares MPs in original units. Economics and jobs use the
+same assumptions entered here; no additional fleet or population model is run.

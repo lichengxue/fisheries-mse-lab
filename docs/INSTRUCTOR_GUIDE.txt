@@ -1,5 +1,5 @@
 FISHERIES MSE CLASSROOM LAB
-Interface 1.7.0 / scientific model 1.4.0
+Interface 1.8.0 / scientific model 1.4.0
 
 OPEN AND EXPLORE
 Open index.html directly in a modern browser, or use the public classroom site.
@@ -23,7 +23,7 @@ SEVEN STEPS
 4. FISHING RULES: compare three fixed catches, a fixed share of estimated SSB,
    stock-responsive catch rules and FMSY fishing targets. Only settings relevant
    to the selected rule are shown. Optional reference-point detail explains FMSY.
-5. COMPARE: inspect catch against the chance of a low stock across eight rules.
+5. COMPARE: start with the radar or choose two goals for a trade-off plot.
    Extra panels contain trajectories, tables, risk intervals and a pinned-run
    comparison. A pin lasts for the page session; change one assumption at a time.
 6. ONE FUTURE: Previous/Next, a year number and Play years follow the annual loop.
@@ -150,6 +150,40 @@ SOURCE AND VALIDATION
 src/model.js: biology, observations, sequential fitting, rules and reference points.
 src/assessment-ui.js: survey/assessment plots, controls and joint data export.
 src/app.js: web worker, main plots and other CSVs.
-Build: npm run build. Verify: npm test (39 checks). No third-party packages.
+Build: npm run build. Verify: npm test (42 checks). No third-party packages.
 The GitHub Pages workflow tests and deploys dist/. index.html is the same
 standalone offline lab. The model assumptions are also available in the GUI.
+
+
+MP TRADE-OFF EXERCISE — INTERFACE 1.8
+An MP combines survey data, assessment and a fishing rule. The candidate MPs in
+one simulation share the survey and assessment; their fishing rules differ.
+
+1. Open Compare -> Radar. Open Choose MPs to compare and select one to three MPs.
+   Compare each spoke: Avoid low SSB, Catch, Fishing profit, Jobs supported and
+   Steady catches. Outward is better on that particular 0–100 scale.
+2. Explain a trade-off rather than naming the largest polygon. A stable catch
+   can be small, and a large catch can have high stock risk. Jobs are a proxy
+   based on catch, so the goals are not all independent.
+3. Open See the values and change the scale. Inspect real values before drawing
+   a conclusion. Scores for catch/profit/jobs reach 100 at the entered targets;
+   negative profits score 0. These targets are shared with the stakeholder
+   discussion. Changing a target changes scores, not simulated catches or fish.
+4. Switch to Trade-off -> two goals. Compare Catch versus Chance of low SSB,
+   then Fishing profit versus Annual catch change. The caption identifies the
+   better direction on each axis. Profit is displayed in thousands of dollars.
+   Each dot is one MP; clicking it chooses the MP to inspect elsewhere.
+5. Change priorities in Stakeholder discussion. The radar still shows separate
+   objectives; role weights and votes are not folded into its axes or area.
+   Ask whether the group can agree on an acceptable balance.
+
+Radar summaries average the ensemble and projection horizon, rather than one
+selected future or year. The radar does not show uncertainty or choose a winner.
+Adding or removing an MP does not rescale the remaining MPs. Low-SSB risk uses
+the same limit and horizon as the other results; zero observed risk is not proof
+of zero risk. See the optional numeric results for Monte Carlo uncertainty.
+
+SVG buttons save both chart types. Download comparison CSV records selected MPs,
+raw values with units, all five scores, targets, economics and model settings.
+Save/Load scenario also retains comparison choices. Browser preferences remember
+the selected view, MPs and axes; they do not alter the model's random draws.

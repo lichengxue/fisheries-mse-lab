@@ -112,3 +112,28 @@ The crossing-risk metric counts projection years 1 through the chosen horizon; i
 ## Economic postprocessing and stakeholder workshop
 
 Actual catch and F are retained for every future and projection year. `src/economics.js` applies editable accounting assumptions to these trajectories; `src/workshop.js` displays economic outcomes and an objective-scoring workshop. These modules do not alter biology, management advice or fleet behavior. Public survey cost counts visits, including ages-only visits; age-sample size does not add a separate ageing cost in this version. See [the full equations and exercise](ECONOMICS_AND_WORKSHOP.txt). The interface labels landings-supported job-years as a proxy and separates calculated preference scores from participants’ recorded votes.
+
+
+## Comparing management procedures and objectives (interface 1.8)
+
+An MP combines observations, an assessment method and a harvest rule. Within one lab run, the eight candidate MPs share survey, assessment and implementation settings; their harvest rules differ. This comparison is not a factorial search across different survey/assessment designs. Changing those settings generates a different ensemble; the existing pinned-run feature remains available for a same-rule comparison across runs.
+
+The Compare screen defaults to a radar chart for one to three selected MPs. Its five axes reuse the stakeholder workshop's fixed class targets, rather than rescaling to the currently selected MPs:
+
+| Axis (outward is better) | Score from 0 to 100 | Original value retained |
+| --- | --- | --- |
+| Avoid low SSB | 100 × (1 − crossing risk) | Fraction of futures crossing the low-SSB limit |
+| Catch | 100 × clamp(mean catch / catch target, 0, 1) | Mean actual catch, t/year |
+| Fishing profit | 100 × clamp(mean operating profit / profit target, 0, 1) | Mean operating profit, dollars/year |
+| Jobs supported | 100 × clamp(mean job-years / jobs target, 0, 1) | Mean landings-supported job-years/year |
+| Steady catches | 100 × clamp(1 − mean absolute annual catch change / change-to-avoid, 0, 1) | Mean absolute annual catch change, t |
+
+Risk is the same horizon-specific at-least-one-crossing probability used elsewhere in the lab. The other values average all simulated years and futures. No scoring is applied to a single selected year or the first replicate. Catch, profit and job scores saturate at 100 once their target is reached; negative profit scores zero. Stock safety has its natural probability scale and no editable rescaling. A zero-catch MP can have a high stability score but a low catch/profit score: that is a trade-off, not a scoring error.
+
+Changing class targets changes radar scores and the workshop's criterion scores together. It changes no simulated abundance, observations, HCR decisions, catch or economics. Role weights, votes and shared limits do not change the radar, which presents separate objectives rather than a weighted aggregate. Economic assumptions in People & money update profit and jobs in both views. Jobs are a catch-based proxy and can be correlated with catch. Polygon area is not an overall ranking, and no MP is automatically selected from it. The radar shows summaries, not assessment intervals or uncertainty across futures. Original values and scoring targets are available beside it.
+
+The alternative two-goal view plots all eight MPs using any two distinct objectives: mean catch, mean operating profit, mean jobs, crossing risk or mean absolute annual catch change. Axes use their original units (profit is displayed in thousands of dollars); directions are explained in the caption. Negative profits remain visible. Changing axes never reruns the population model. Interactive points and their text legend choose the MP to inspect in other screens.
+
+Comparison preferences (view, one to three MP IDs and the two axes) are remembered locally and included in scenario JSON. Class targets and economics stay in the existing workshop state. SVG exports retain labels and the selected MP legend; the comparison CSV includes raw values with explicit units, all five scores, targets, economic assumptions and the full model configuration. It reports the selected radar MPs, not a ranking.
+
+Presenting performance against agreed objectives is central to MSE; see [CDFW guidance on comparing performance and evaluating trade-offs](https://wildlife.ca.gov/Conservation/Marine/MLMA/Master-Plan/Mgmt-Strategy-Eval). The chart and scales here are classroom choices rather than management recommendations.
