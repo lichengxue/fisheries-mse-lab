@@ -23,6 +23,7 @@ const tradeoffUI = fs.existsSync(path.join(root,'src','tradeoff-ui.js')) ? read(
 const tradeoffCSS = fs.existsSync(path.join(root,'src','tradeoff.css')) ? read('tradeoff.css') : '';
 const feedbackUI = fs.existsSync(path.join(root,'src','feedback.js')) ? read('feedback.js') : '';
 const feedbackCSS = fs.existsSync(path.join(root,'src','feedback.css')) ? read('feedback.css') : '';
+const trajectoryCore = fs.existsSync(path.join(root,'src','trajectory.js')) ? read('trajectory.js') : '';
 // Keep the previous template buildable while interface files are updated.
 const required = ['/*__MODEL__*/', '/*__APP__*/'];
 if (template.includes('id="tab-stock"')) required.push('/*__UI__*/', '/*__UI_HELPERS__*/', '/*__UI_CSS__*/');
@@ -41,10 +42,14 @@ if (template.includes('id="feedback-stage"')) {
   required.push('/*__FEEDBACK_UI__*/','/*__FEEDBACK_CSS__*/');
   if (!feedbackUI || !feedbackCSS) throw Error('Feedback interface files are required.');
 }
+if (template.includes('id="timeline-ssb-chart"')) {
+  required.push('/*__TRAJECTORY_CORE__*/');
+  if (!trajectoryCore) throw Error('Trajectory helpers are required.');
+}
 for (const placeholder of required) {
   if (template.split(placeholder).length !== 2) throw Error('Expected one ' + placeholder);
 }
-const html = template.replace('/*__MODEL__*/', () => model).replace('/*__APP__*/', () => app).replace('/*__UI__*/', () => ui).replace('/*__UI_HELPERS__*/', () => uiHelpers).replace('/*__UI_CSS__*/', () => uiCSS).replace('/*__ECONOMICS__*/',()=>economics).replace('/*__WORKSHOP__*/',()=>workshop).replace('/*__WORKSHOP_CSS__*/',()=>workshopCSS).replace('/*__CLARITY__*/',()=>clarity).replace('/*__CLARITY_CSS__*/',()=>clarityCSS).replace('/*__VISUALS__*/',()=>visuals).replace('/*__READABILITY_CSS__*/',()=>readabilityCSS).replace('/*__ASSESSMENT_UI__*/',()=>assessmentUI).replace('/*__ASSESSMENT_CSS__*/',()=>assessmentCSS).replace('/*__TRADEOFF_CORE__*/',()=>tradeoffCore).replace('/*__TRADEOFF_UI__*/',()=>tradeoffUI).replace('/*__TRADEOFF_CSS__*/',()=>tradeoffCSS).replace('/*__FEEDBACK_UI__*/',()=>feedbackUI).replace('/*__FEEDBACK_CSS__*/',()=>feedbackCSS);
+const html = template.replace('/*__MODEL__*/', () => model).replace('/*__APP__*/', () => app).replace('/*__UI__*/', () => ui).replace('/*__UI_HELPERS__*/', () => uiHelpers).replace('/*__UI_CSS__*/', () => uiCSS).replace('/*__ECONOMICS__*/',()=>economics).replace('/*__WORKSHOP__*/',()=>workshop).replace('/*__WORKSHOP_CSS__*/',()=>workshopCSS).replace('/*__CLARITY__*/',()=>clarity).replace('/*__CLARITY_CSS__*/',()=>clarityCSS).replace('/*__VISUALS__*/',()=>visuals).replace('/*__READABILITY_CSS__*/',()=>readabilityCSS).replace('/*__ASSESSMENT_UI__*/',()=>assessmentUI).replace('/*__ASSESSMENT_CSS__*/',()=>assessmentCSS).replace('/*__TRADEOFF_CORE__*/',()=>tradeoffCore).replace('/*__TRADEOFF_UI__*/',()=>tradeoffUI).replace('/*__TRADEOFF_CSS__*/',()=>tradeoffCSS).replace('/*__FEEDBACK_UI__*/',()=>feedbackUI).replace('/*__FEEDBACK_CSS__*/',()=>feedbackCSS).replace('/*__TRAJECTORY_CORE__*/',()=>trajectoryCore);
 fs.mkdirSync(path.join(root, 'dist'), {recursive: true});
 fs.writeFileSync(path.join(root, 'index.html'), html);
 fs.writeFileSync(path.join(root, 'dist', 'index.html'), html);
