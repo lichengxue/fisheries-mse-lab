@@ -2,8 +2,8 @@
 'use strict';
 const $=id=>document.getElementById(id),api=globalThis.__mseDemo,m=globalThis.MSELab,helpers=globalThis.MSEInterface;
 const colors={catchLow:'#708c56',fixed:'#586d76',catchHigh:'#ac6b35',proportional:'#3a78a9',ramp:'#0a7a70',smooth:'#855c99',fmsy:'#b04462',framp:'#315a91'};
-const names={stock:'Fish stock',data:'Survey',rules:'Fishing rules',results:'Compare',future:'One future',people:'People & money'};
-const percent=new Set(['recruitCV','surveyCV','surveyBias','harvest','limit','trigger','implementationCV','smoothCap']);
+const names={stock:'Fish stock',data:'Survey',assessment:'Assessment',rules:'Fishing rules',results:'Compare',future:'One future',people:'People & money'};
+const percent=new Set(['recruitCV','surveyCV','surveyBias','assessmentProcessCV','harvest','limit','trigger','implementationCV','smoothCap']);
 const ranges=new Map(),shown=new Set(m.RULES.map(r=>r.id));
 let view='stock',timer,toastTimer,baseline=null,playTimer=null,playingStep=false,suppress=false,historyUndo=[],editIndex=0,dragging=false,dragChanged=false,editorScale=null;
 const n=(v,d=1)=>Number(v).toLocaleString(undefined,{maximumFractionDigits:d,minimumFractionDigits:d});
@@ -128,7 +128,7 @@ function apply(c){clearTimeout(timer);stopPlayback();suppress=true;api.applyConf
 $('reset-scenario').addEventListener('click',()=>{apply({...m.DEFAULTS,historicalF:m.DEFAULTS.historicalF.slice()});$('historyPreset').value='development';showView('stock');toast('Classroom defaults restored.');});
 document.querySelectorAll('[data-scenario]').forEach(b=>b.addEventListener('click',()=>{const c={...m.DEFAULTS};let key='stock';if(b.dataset.scenario==='rebuild'){c.species='long';c.historicalF=m.historicalPreset('rebuilding');c.years=100;c.rule='framp';}if(b.dataset.scenario==='noise'){c.surveyCV=.5;c.surveyEvery=2;c.estimator='direct';key='data';}if(b.dataset.scenario==='catch'){c.species='short';const ref=m.referencePoints(m.makeStock('short'),c);c.catchLow=Math.round(ref.MSY*.5);c.fixedCatch=Math.round(ref.MSY);c.catchHigh=Math.round(ref.MSY*1.5);key='results';}apply(c);showView(key);toast('Classroom scenario loaded.');}));
 $('msy-catches').addEventListener('click',()=>{try{const c=api.configuration(),ref=m.referencePoints(m.makeStock(c.species,c.Mfactor),c);['catchLow','fixedCatch','catchHigh'].forEach((id,i)=>{$(id).value=Math.min(1000,Math.round(ref.MSY*[.5,1,1.5][i]));});emit($('fixedCatch'));syncControls();toast('Catch levels set using the current management-model MSY.');}catch(e){toast(e.message);}});
-$('save-scenario').addEventListener('click',()=>{try{saveFile(JSON.stringify({format:'fisheries-mse-scenario',interfaceVersion:'1.6.0',config:api.configuration(),workshop:globalThis.MSEWorkshop?.getState()},null,2),'application/json','fisheries-mse-scenario.json');}catch(e){toast(e.message);}});
+$('save-scenario').addEventListener('click',()=>{try{saveFile(JSON.stringify({format:'fisheries-mse-scenario',interfaceVersion:'1.7.0',config:api.configuration(),workshop:globalThis.MSEWorkshop?.getState()},null,2),'application/json','fisheries-mse-scenario.json');}catch(e){toast(e.message);}});
 $('load-scenario').addEventListener('click',()=>$('scenario-file').click());
 $('scenario-file').addEventListener('change',async()=>{const file=$('scenario-file').files[0];if(!file)return;try{if(file.size>5e6)throw Error('Choose a scenario smaller than 5 MB.');const data=JSON.parse(await file.text());const config=m.check(data.config||data);if(data.workshop)globalThis.MSEWorkshop?.loadState(data.workshop);apply(config);toast('Saved scenario loaded.');}catch(e){toast('Could not load the scenario: '+e.message);}finally{$('scenario-file').value='';}});
 // Comparison views show common-rule outcomes, rather than just a selected path.
@@ -155,10 +155,14 @@ function drawMetrics(){const result=api.result;if(!result)return;const r=result.
 }
 $('pin-baseline').addEventListener('click',()=>{if(!api.result||api.dirty||api.busy)return;baseline=structuredClone(api.result);paint();toast('Baseline pinned for this browser session. Change one setting to compare.');});
 $('baseline-bar').addEventListener('click',e=>{if(e.target.id==='clear-baseline'){baseline=null;paint();}if(e.target.id==='restore-baseline')apply({...baseline.config});});
-function drawSurvey(){if(view!=='data')return;const cv=+$('surveyCV').value,bias=+$('surveyBias').value,random=m.rng(38617),values=Array.from({length:20},()=>1000*(1+bias)*m.multiplier(cv,m.normal(random)));
- const P=axes('survey-demo',{xMin:1,xMax:20,yMax:nice(Math.max(1200,...values)*1.1),integerX:true,xTitle:'Repeated survey of the same stock',yTitle:'Survey index (t)',title:'Illustrative survey variation around a fixed true biomass of 1000 tonnes'});if(!P)return;hline(P,1000,'#586d76');hline(P,1000*(1+bias),'#0a7a70','');values.forEach((v,i)=>{const circle=node('circle',{cx:P.X(i+1),cy:P.Y(v),r:4,fill:'#b4582f'});circle.append(node('title',{},`Survey ${i+1}: ${n(v)} t`));P.marks.append(circle);});P.svg.append(node('text',{x:P.left+5,y:P.top+4},`True stock: 1,000 t · CV ${p(cv)} · bias ${p(bias)}`));
+function drawSurvey(){
+ const cv=+$('surveyCV').value,bias=+$('surveyBias').value,q=+$('surveyQ').value,stock=m.makeStock($('species').value);
+ const c={...m.DEFAULTS,surveyQ:q,surveyMinAge:Math.min(stock.A,+$('surveyMinAge').value||1)},expected=m.surveyExpectation(stock.unfished,stock,c).index;
+ const random=m.rng(7631),values=Array.from({length:20},(_,i)=>({x:i+1,y:expected*(1+bias)*m.multiplier(cv,m.normal(random))}));
+ const P=axes('survey-demo',{xMin:1,xMax:20,yMax:nice(Math.max(expected,...values.map(v=>v.y))*1.1),xTitle:'Repeated survey',yTitle:'Survey index (relative units)',title:'Repeated relative index observations of a fixed stock',integerX:true});if(!P)return;
+ hline(P,expected);values.forEach(v=>P.marks.append(node('circle',{cx:P.X(v.x),cy:P.Y(v.y),r:4,fill:'#b4582f'})));
 }
-// Playback scrubs an already-computed path; it never changes the random futures.
+
 function setYear(year){$('year').value=Math.max(1,Math.min(+$('year').max,year));emit($('year'));updateState();}
 $('previous').addEventListener('click',()=>{stopPlayback();setYear(+$('year').value-1);});
 $('year-number').addEventListener('change',()=>{stopPlayback();setYear(+$('year-number').value||1);});

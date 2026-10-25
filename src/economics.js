@@ -25,7 +25,7 @@ function annual(catchTonnes,F,input){
 }
 function evaluate(result,input={},withBands=true){
  const a=validate(input),years=result.config.years,reps=result.config.reps;
- const surveys=result.rules[0].path.survey.filter(v=>v!==null).length;
+ const surveys=(result.rules[0].path.surveyVisits||result.rules[0].path.survey.map(v=>v!==null)).filter(Boolean).length;
  const agencyAnnual=surveys*a.surveyCost/years;
  const rules=result.rules.map(rule=>{
   const data=rule.economicTrials;if(!data||data.catch.length!==years*reps||data.F.length!==years*reps)throw Error('Update the simulation to generate the economic trajectories.');

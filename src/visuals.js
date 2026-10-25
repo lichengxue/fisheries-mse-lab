@@ -28,7 +28,7 @@ function decorate(){
 function initialize(){
  const api=root.__mseDemo,heading=document.querySelector('.mast h1');heading.insertAdjacentHTML('afterbegin',icon('fish','brand-fish'));
  document.querySelectorAll('[data-species]').forEach(b=>{const span=b.querySelector('.fish-symbol');span.setAttribute('aria-hidden','true');span.innerHTML=fish(b.dataset.species);});
- const tabs={stock:'fish',data:'survey',rules:'boat',results:'chart',future:'future',people:'people'};
+ const tabs={stock:'fish',data:'survey',assessment:'chart',rules:'boat',results:'chart',future:'future',people:'people'};
  for(const [key,kind]of Object.entries(tabs)){const badge=document.querySelector('#tab-'+key+'>span'),step=badge.textContent;badge.innerHTML=icon(kind)+`<span class="sr-only">${step}</span>`;badge.classList.add('step-symbol');}
  const label=document.createElement('label'),select=document.createElement('select'),caption=document.createElement('span');label.className='text-size-choice';caption.textContent='Text size';select.id='text-size';select.setAttribute('aria-label','Text size');select.innerHTML='<option value="comfortable">Comfortable</option><option value="large">Larger</option>';label.append(caption,select);document.querySelector('.header-actions').append(label);
  let saved='comfortable';try{saved=localStorage.getItem('mse-text-size')||saved;}catch{}if(!['comfortable','large'].includes(saved))saved='comfortable';select.value=saved;

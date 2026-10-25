@@ -1,7 +1,7 @@
-/* Classroom MSE model, version 1.3.0. Historical F drives an age-based BH population. */
+/* Classroom MSE model: age-based biology, survey data and a sequential assessment. */
 (function (root) {
   'use strict';
-  const VERSION = '1.3.0';
+  const VERSION = '1.4.0';
   const PRESETS = {
     short: {name:'Short lived', example:'Anchovy-like', A:7, M:0.90, k:0.75, winf:0.10, mat50:1.5, matSlope:3, selectAge:1},
     medium:{name:'Medium lived',example:'Hake-like',A:16,M:0.25,k:0.25,winf:2.0,mat50:3,matSlope:1.8,selectAge:4},
@@ -18,7 +18,8 @@
     {id:'framp',name:'FMSY with a stock limit',short:'FMSY + limit'}
   ];
   const DEFAULTS={species:'medium',surveyCV:0.25,surveyBias:0,surveyEvery:1,
-    estimator:'direct',recruitCV:0.45,implementationCV:0.10,historicalF:historicalPreset('development'),
+    surveyData:'both',surveyQ:0.1,surveyMinAge:1,ageSample:100,
+    estimator:'assessment',useAgeData:1,assumedQ:0.1,assessmentProcessCV:0.15,recruitCV:0.45,implementationCV:0.10,historicalF:historicalPreset('development'),
     harvest:0.18,limit:0.20,trigger:0.50,smoothCap:0.20,Mfactor:1,
     srType:'BH',steepness:0.75,catchLow:50,fixedCatch:100,catchHigh:150,Fmultiplier:1,
     years:60,reps:200,seed:38617,rule:'framp'};
@@ -47,13 +48,19 @@
   function check(input){
     const c={...DEFAULTS,...input};
     if(!PRESETS[c.species])throw Error('Choose a life history.');
-    if(!['direct','mean','filter'].includes(c.estimator))throw Error('Choose an estimation model.');
+    if(c.estimator==='filter')c.estimator='assessment'; // Earlier saved scenarios.
+    if(!['direct','mean','assessment'].includes(c.estimator))throw Error('Choose an assessment method.');
+    if(!['index','both','ages'].includes(c.surveyData))throw Error('Choose what the survey provides.');
+    if(c.surveyData==='ages'&&c.estimator!=='assessment')throw Error('Age samples alone require the age-structured assessment.');
+    if(![0,1].includes(+c.useAgeData))throw Error('Choose whether the assessment uses age samples.');
+    c.useAgeData=+c.useAgeData;
+    if(c.surveyData==='ages'&&!c.useAgeData)throw Error('With age samples only, include those samples in the assessment.');
     if(c.srType!=='BH')throw Error('This population uses Beverton–Holt stock–recruitment.');
     c.historicalF=parseHistoricalF(c.historicalF);
-    const bounds={surveyCV:[0,1.5],surveyBias:[-0.75,1],surveyEvery:[1,5],recruitCV:[0,1.5],implementationCV:[0,1],harvest:[0,0.8],limit:[0.05,0.7],trigger:[0.1,1],smoothCap:[0,1],Mfactor:[0.5,1.5],steepness:[0.21,0.99],catchLow:[0,1000],fixedCatch:[0,1000],catchHigh:[0,1000],Fmultiplier:[0,2],years:[5,150],reps:[1,1000],seed:[0,4294967295]};
+    const bounds={surveyQ:[0.001,10],assumedQ:[0.001,10],surveyMinAge:[1,PRESETS[c.species].A],ageSample:[10,1000],assessmentProcessCV:[0,0.6],surveyCV:[0,1.5],surveyBias:[-0.75,1],surveyEvery:[1,5],recruitCV:[0,1.5],implementationCV:[0,1],harvest:[0,0.8],limit:[0.05,0.7],trigger:[0.1,1],smoothCap:[0,1],Mfactor:[0.5,1.5],steepness:[0.21,0.99],catchLow:[0,1000],fixedCatch:[0,1000],catchHigh:[0,1000],Fmultiplier:[0,2],years:[5,150],reps:[1,1000],seed:[0,4294967295]};
     for(const [k,[lo,hi]]of Object.entries(bounds))if(!Number.isFinite(+c[k])||+c[k]<lo||+c[k]>hi)throw Error(k+' is outside the allowed range.');else c[k]=+c[k];
     if(c.limit>=c.trigger)throw Error('The biomass trigger must be above the closure limit.');
-    for(const k of ['years','reps','seed','surveyEvery'])c[k]=Math.round(c[k]);
+    for(const k of ['years','reps','seed','surveyEvery','surveyMinAge','ageSample'])c[k]=Math.round(c[k]);
     return c;
   }
   function survivorship(stock,F){
@@ -130,50 +137,124 @@
     }
     return out;
   }
-  function makeEstimator(stock,c){
-    const assumed=makeStock(c.species,c.Mfactor);
-    return {stock:assumed,N:assumed.unfished.slice(),variance:0.30*0.30,
-      history:[],last:stock.S0};
+  // One survey visit can produce an aggregate biomass index, ages, or both.
+  // Age proportions describe sampled NUMBERS, not biomass; q cancels from them.
+  function surveySelectivity(stock,c){return stock.ages.map(a=>a>=c.surveyMinAge?1:0);}
+  function surveyExpectation(N,stock,c,q=c.surveyQ){
+    const sel=surveySelectivity(stock,c),numbers=N.map((v,a)=>v*sel[a]),total=sum(numbers);
+    return {index:q*dot(numbers,stock.w),proportions:numbers.map(v=>total>0?v/total:0)};
   }
-  function estimate(state,index,c){
-    const observed=Number.isFinite(index)?Math.max(index,1e-12):null;
-    if(c.estimator==='filter'){
-      let prediction=Math.max(1e-12,dot(state.N,state.stock.sw));
-      if(observed!==null){
-        const V=varianceLog(c.surveyCV),P=state.variance;
-        const gain=V===0?1:P/(P+V);
-        const mu=Math.log(prediction)+gain*(Math.log(observed)+V/2-Math.log(prediction));
-        state.variance=(1-gain)*P;
-        const updated=Math.exp(clamp(mu+state.variance/2,-30,30));
-        const scale=updated/prediction;state.N=state.N.map(x=>x*scale);prediction=updated;
-      }
-      state.last=prediction;
-    }else if(observed!==null){
-      state.history.push(observed);if(state.history.length>3)state.history.shift();
-      state.last=c.estimator==='mean'?sum(state.history)/state.history.length:observed;
+  function sampleAges(proportions,n,seed){
+    const random=rng(seed),counts=Array(proportions.length).fill(0),cdf=[];let total=0;
+    for(const p of proportions){total+=p;cdf.push(total);}
+    if(total<=0)return counts;
+    for(let j=0;j<n;j++){
+      const u=random()*total;let lo=0,hi=cdf.length-1;
+      while(lo<hi){const mid=(lo+hi)>>>1;if(cdf[mid]>u)hi=mid;else lo=mid+1;}counts[lo]++;
     }
+    return counts;
+  }
+  function observeSurvey(N,stock,c,t,z,offset=0){
+    if((t+offset)%c.surveyEvery!==0)return {visited:false,index:null,counts:null,sampleSize:0};
+    const expected=surveyExpectation(N,stock,c),hasIndex=c.surveyData!=='ages',hasAges=c.surveyData!=='index';
+    const counts=hasAges?sampleAges(expected.proportions,c.ageSample,z.ageSeeds[t]):null;
+    return {visited:true,index:hasIndex?expected.index*(1+c.surveyBias)*multiplier(c.surveyCV,z.obs[t]):null,
+      counts,sampleSize:counts?sum(counts):0};
+  }
+  function makeEstimator(stock,c){
+    // stock supplies no true state. The assessment builds its own assumed biology.
+    const assumed=makeStock(c.species,c.Mfactor);
+    return {stock:assumed,N:assumed.unfished.slice(),P:Array(assumed.A).fill(.6*.6),
+      variance:.36,history:[],last:assumed.S0,fit:null,previousF:null,catchShortfall:false};
+  }
+  // Expected-information matrix: diagonal minus one rank + one rank.
+  // This O(A) solve keeps a fitted assessment affordable inside every MSE year.
+  function assessmentInformation(priorP,p,v,n,V){
+    const d=priorP.map((P,a)=>1/(1/Math.max(P,1e-7)+n*p[a])),u=d.map((x,a)=>x*p[a]);
+    const alpha=n/Math.max(1e-12,1-n*dot(p,u));
+    const base=b=>{const k=alpha*dot(u,b);return d.map((x,a)=>x*b[a]+u[a]*k);};
+    const w=base(v),beta=V===null?0:1/(V+dot(v,w));
+    const solve=b=>{const y=base(b),k=beta*dot(w,b);return y.map((x,a)=>x-w[a]*k);};
+    return {solve,diag:d.map((x,a)=>Math.max(1e-8,x+alpha*u[a]*u[a]-beta*w[a]*w[a]))};
+  }
+  function fitAssessment(state,observation,c){
+    const s=state.stock,sel=surveySelectivity(s,c),prior=state.N.map(v=>Math.log(Math.max(v,1e-12))),priorP=state.P.slice();
+    const counts=observation.counts,n=counts?sum(counts):0;
+    const hasIndex=Number.isFinite(observation.index)&&observation.index>0;
+    const observedV=varianceLog(c.surveyCV),V=hasIndex?Math.max(1e-6,observedV):null;
+    const y=hasIndex?Math.log(observation.index)+observedV/2:null;
+    const evaluate=x=>{
+      const N=x.map(Math.exp),sample=N.map((v,a)=>v*sel[a]),total=Math.max(sum(sample),1e-30),B=Math.max(dot(sample,s.w),1e-30);
+      const p=sample.map(v=>v/total),v=sample.map((z,a)=>z*s.w[a]/B);
+      const residual=hasIndex?Math.log(c.assumedQ*B)-y:0;
+      let objective=hasIndex?residual*residual/(2*V):0;
+      const gradient=x.map((z,a)=>{objective+=(z-prior[a])**2/(2*priorP[a]);if(counts?.[a])objective-=counts[a]*Math.log(Math.max(p[a],1e-30));
+        return (z-prior[a])/priorP[a]+(hasIndex?residual*v[a]/V:0)+(n?p[a]*n-counts[a]:0);});
+      return {N,p,v,objective,gradient,index:c.assumedQ*B,residual};
+    };
+    let x=prior.slice(),e=evaluate(x),before=e.objective,iterations=0,converged=!hasIndex&&!n;
+    for(;iterations<18&&(hasIndex||n);iterations++){
+      const info=assessmentInformation(priorP,e.p,e.v,n,V),step=info.solve(e.gradient),max=Math.max(...step.map(Math.abs));
+      if(max<1e-5){converged=true;break;}
+      let rate=Math.min(1,2/Math.max(max,1e-12)),accepted=false;
+      for(let j=0;j<14;j++,rate/=2){
+        const candidate=x.map((z,a)=>clamp(z-rate*step[a],-27,37)),next=evaluate(candidate);
+        if(next.objective<=e.objective+1e-9){x=candidate;e=next;accepted=true;break;}
+      }
+      if(!accepted)break;
+    }
+    const info=assessmentInformation(priorP,e.p,e.v,n,V),S=dot(e.N,s.sw),shares=e.N.map((v,a)=>v*s.sw[a]/Math.max(S,1e-30));
+    state.N=e.N;state.P=info.diag;state.last=S;
+    state.variance=Math.max(0,dot(shares,info.solve(shares)));
+    state.fit={iterations,converged,objectiveBefore:before,objectiveAfter:e.objective,
+      priorIndex:evaluate(prior).index,fittedIndex:e.index,priorSSB:dot(prior.map(Math.exp),s.sw),
+      indexResidual:hasIndex?-e.residual/Math.sqrt(V):null};
+    return S;
+  }
+  function estimate(state,data,c){
+    const observation=typeof data==='number'||data===null?{index:data,counts:null}:data;
+    if(c.estimator==='assessment')return fitAssessment(state,c.useAgeData?observation:{...observation,counts:null},c);
+    // These two comparators assume a fixed unfished age shape and calibrated q.
+    // They are deliberately labelled index shortcuts, not age-structured fits.
+    if(Number.isFinite(observation.index)){
+      const perSSB=surveyExpectation(state.stock.unfished,state.stock,c,c.assumedQ).index/state.stock.S0;
+      const calibrated=Math.max(1e-12,observation.index)/perSSB;
+      state.history.push(calibrated);if(state.history.length>3)state.history.shift();
+      state.last=c.estimator==='mean'?sum(state.history)/state.history.length:calibrated;
+    }
+    state.N=state.stock.unfished.map(v=>v*state.last/state.stock.S0);state.fit=null;
     return state.last;
   }
+  function assessmentSnapshot(state,observation,c){
+    const expected=surveyExpectation(state.N,state.stock,c,c.assumedQ),sd=Math.sqrt(Math.max(0,state.variance));
+    return {ssb:state.last,lo:c.estimator==='assessment'?state.last*Math.exp(-1.281551566*sd):null,
+      hi:c.estimator==='assessment'?state.last*Math.exp(1.281551566*sd):null,
+      fittedIndex:expected.index,fittedAge:expected.proportions,N:state.N.slice(),
+      observedAge:observation.counts?.slice()||null,sampleSize:observation.sampleSize||0,
+      visited:observation.visited,previousF:state.previousF,catchShortfall:state.catchShortfall,...state.fit};
+  }
   function predictEstimator(state,actualCatch,c){
-    if(c.estimator!=='filter')return;
-    const S=dot(state.N,state.stock.sw),fit=invertCatch(state.N,state.stock,actualCatch);
-    state.N=advance(state.N,state.stock,fit.F,recruitment(S,state.stock,c.steepness,c.srType));
-    // Deliberately simple process-variance allowance, not a fitted assessment.
-    const q=0.02+c.recruitCV*0.25/Math.sqrt(state.stock.mat50);
-    state.variance=Math.min(1.5,state.variance+q*q);
+    if(c.estimator!=='assessment')return;
+    const s=state.stock,S=dot(state.N,s.sw),fit=invertCatch(state.N,s,actualCatch),oldN=state.N,oldP=state.P;
+    state.N=advance(oldN,s,fit.F,recruitment(S,s,c.steepness));state.previousF=fit.F;state.catchShortfall=fit.capped;
+    const process=varianceLog(c.assessmentProcessCV),nextP=Array(s.A).fill(0);
+    nextP[0]=Math.max(1e-6,varianceLog(c.recruitCV)+process);
+    for(let a=1;a<s.A-1;a++)nextP[a]=Math.min(4,oldP[a-1]+process);
+    const j=s.A-1,enter=oldN[j-1]*Math.exp(-s.M-fit.F*s.sel[j-1]),stay=oldN[j]*Math.exp(-s.M-fit.F*s.sel[j]),total=Math.max(enter+stay,1e-30);
+    nextP[j]=Math.min(4,(enter/total)**2*oldP[j-1]+(stay/total)**2*oldP[j]+process);
+    state.P=nextP.map(v=>Math.max(v,1e-7));
   }
   function conditionEstimator(stock,c,history,z){
-    // Historical noisy surveys and reported catches condition the manager's state.
-    // The supplied true F and true age classes are not passed to the estimator.
-    const state=makeEstimator(stock,c),view={survey:[],estimate:[]};
+    // Only observations and reported catch enter the fitted assessment.
+    const state=makeEstimator(stock,c),view={survey:[],estimate:[],ageComp:[],assessment:[]};
     for(let t=0;t<history.years;t++){
-      const I=t%c.surveyEvery===0?history.ssb[t]*(1+c.surveyBias)*multiplier(c.surveyCV,z.obs[t]):null;
-      view.survey.push(I);view.estimate.push(estimate(state,I,c));
-      predictEstimator(state,history.catch[t],c);
+      const obs=observeSurvey(history.N[t],stock,c,t,z);
+      view.survey.push(obs.index);view.estimate.push(estimate(state,obs,c));view.ageComp.push(obs.counts);
+      view.assessment.push(assessmentSnapshot(state,obs,c));predictEstimator(state,history.catch[t],c);
     }
     return {state,view,previous:history.catch[history.years-1],surveyOffset:history.years};
   }
-  function cloneEstimator(state){return {...state,N:state.N.slice(),history:state.history.slice()};}
+  function cloneEstimator(state){return {...state,N:state.N.slice(),P:state.P.slice(),history:state.history.slice(),fit:state.fit?{...state.fit}:null};}
   function advice(rule,ssb,c,previous=null){
     const d=ssb/1000;
     if(rule==='catchLow')return c.catchLow;
@@ -193,9 +274,9 @@
     return Math.min(3,c.Fmultiplier*reference.Fmsy)*ramp;
   }
   function managementNumbers(state,estimated,c){
-    // Only the filter estimates age composition; other estimators use an assumed
+    // Only the fitted assessment estimates age composition; shortcuts assume an
     // unfished age shape scaled to their survey-based SSB. Never use true N here.
-    return c.estimator==='filter'?state.N:state.stock.unfished.map(v=>v*estimated/state.stock.S0);
+    return c.estimator==='assessment'?state.N:state.stock.unfished.map(v=>v*estimated/state.stock.S0);
   }
   function decision(rule,estimated,c,previous,state,reference){
     if(rule==='fmsy'||rule==='framp'){
@@ -206,17 +287,20 @@
   }
   function shocks(seed,rep,years){
     const random=rng(((seed>>>0)^Math.imul(rep+1,0x9E3779B9))>>>0);
-    return {rec:Array.from({length:years},()=>normal(random)),obs:Array.from({length:years},()=>normal(random)),impl:Array.from({length:years},()=>normal(random))};
+    const ageRandom=rng(((seed>>>0)^Math.imul(rep+1,0x85EBCA6B)^0xC0A6E)>>>0);
+    return {rec:Array.from({length:years},()=>normal(random)),obs:Array.from({length:years},()=>normal(random)),impl:Array.from({length:years},()=>normal(random)),
+      ageSeeds:Array.from({length:years},()=>Math.floor(ageRandom()*4294967296))};
   }
   function trial(c,stock,start,rule,z,retainAges=false,reference=null,conditioned=null){
     let N=start.N.slice(),state=conditioned?cloneEstimator(conditioned.state):makeEstimator(stock,c),previous=conditioned?conditioned.previous:null;
     reference=reference||referencePoints(state.stock,c);
     const out={ssb:[dot(N,stock.sw)],estimate:[],survey:[],advice:[],catch:[],F:[],targetF:[],recruits:[],capped:0};
-    if(retainAges)out.N=[N.slice()];
+    if(retainAges){out.N=[N.slice()];out.assessment=[];out.ageComp=[];out.surveyVisits=[];}
     for(let t=0;t<c.years;t++){
       const S=dot(N,stock.sw);
-      const I=(t+(conditioned?.surveyOffset||0))%c.surveyEvery===0?S*(1+c.surveyBias)*multiplier(c.surveyCV,z.obs[t]):null;
-      const estimated=estimate(state,I,c);
+      const observation=observeSurvey(N,stock,c,t,z,conditioned?.surveyOffset||0),I=observation.index;
+      const estimated=estimate(state,observation,c);
+      if(retainAges){out.assessment.push(assessmentSnapshot(state,observation,c));out.ageComp.push(observation.counts);out.surveyVisits.push(observation.visited);}
       const action=decision(rule,estimated,c,previous,state,reference),quota=Math.max(0,action.catch);
       const desired=quota*multiplier(c.implementationCV,z.impl[t]);
       const fishing=invertCatch(N,stock,desired);
@@ -266,6 +350,7 @@
   const api={VERSION,PRESETS,RULES,DEFAULTS,check,rng,normal,multiplier,quantile,wilson,makeStock,
     survivorship,recruitment,equilibrium,equilibriumAtDepletion,catchFactor,catchAtF,invertCatch,advance,referencePoints,
     historicalPreset,parseHistoricalF,historicalPopulation,conditionEstimator,cloneEstimator,
+    surveySelectivity,surveyExpectation,sampleAges,observeSurvey,fitAssessment,assessmentInformation,assessmentSnapshot,
     makeEstimator,estimate,predictEstimator,advice,targetF,managementNumbers,decision,shocks,trial,runEnsemble,dot,sum};
   root.MSELab=api;if(typeof module==='object'&&module.exports)module.exports=api;
 })(globalThis);

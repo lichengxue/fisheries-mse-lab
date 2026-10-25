@@ -3,7 +3,7 @@
 const $=id=>document.getElementById(id),m=globalThis.MSELab;
 const colors={teal:'#117d79',orange:'#b4582f',blue:'#3a78a9',muted:'#586d76',purple:'#855c99'};
 const ruleColor={catchLow:'#708c56',fixed:colors.muted,catchHigh:'#a56b40',proportional:colors.blue,ramp:colors.teal,smooth:colors.purple,fmsy:'#b04462',framp:'#315a91'};
-const fields=['species','historicalF','surveyCV','surveyBias','surveyEvery','estimator','recruitCV','implementationCV','harvest','limit','trigger','smoothCap','Mfactor','steepness','catchLow','fixedCatch','catchHigh','Fmultiplier','years','reps','seed'];
+const fields=['species','historicalF','surveyCV','surveyBias','surveyEvery','surveyData','surveyQ','surveyMinAge','ageSample','estimator','useAgeData','assumedQ','assessmentProcessCV','recruitCV','implementationCV','harvest','limit','trigger','smoothCap','Mfactor','steepness','catchLow','fixedCatch','catchHigh','Fmultiplier','years','reps','seed'];
 let result=null,selected='framp',worker=null,token=0,busy=false,dirty=false;
 const num=(n,d=1)=>Number(n).toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d});
 const pct=(n,d=0)=>num(100*n,d)+'%';
@@ -11,10 +11,10 @@ const fmt=n=>Math.abs(n)>=1000?num(n,0):Math.abs(n)>=100?num(n,0):Math.abs(n)>=1
 const escape=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function configuration(){
  for(const el of document.querySelectorAll('input[type=number][data-companion]'))if(el.value===''||!el.checkValidity())throw Error('Check '+el.getAttribute('aria-label')+'. Enter a value between '+el.min+' and '+el.max+'.');
- const v={rule:selected};for(const k of fields){const el=$(k);if(el.type==='number'&&(el.value===''||!el.checkValidity()))throw Error('Check '+(el.getAttribute('aria-label')||k)+'. Enter a value between '+el.min+' and '+el.max+'.');v[k]=k==='historicalF'?m.parseHistoricalF(el.value):['species','estimator'].includes(k)?el.value:+el.value;}return m.check(v);
+ const v={rule:selected};for(const k of fields){const el=$(k);if(el.type==='number'&&(el.value===''||!el.checkValidity()))throw Error('Check '+(el.getAttribute('aria-label')||k)+'. Enter a value between '+el.min+' and '+el.max+'.');v[k]=k==='historicalF'?m.parseHistoricalF(el.value):['species','estimator','surveyData'].includes(k)?el.value:+el.value;}return m.check(v);
 }
 function descriptions(){
- for(const k of ['recruitCV','surveyCV','harvest','limit','trigger','implementationCV'])$(k+'-value').textContent=pct(+$(k).value);
+ for(const k of ['recruitCV','surveyCV','assessmentProcessCV','harvest','limit','trigger','implementationCV'])$(k+'-value').textContent=pct(+$(k).value);
  $('surveyBias-value').textContent=(+$('surveyBias').value>0?'+':'')+pct(+$('surveyBias').value);
  $('smoothCap-value').textContent='±'+pct(+$('smoothCap').value);
  $('steepness-value').textContent=num(+$('steepness').value,2);
@@ -23,7 +23,7 @@ function descriptions(){
  const life=m.PRESETS[$('species').value];
  $('life-profile').textContent=`${life.example} example. About half the fish are mature by age ${life.mat50}.`;
  try{const F=m.parseHistoricalF($('historicalF').value);$('history-count').textContent=`${F.length} historical years · first F = ${num(F[0],3)} · last F = ${num(F[F.length-1],3)} / year.`;}catch(e){$('history-count').textContent=e.message;}
- $('estimator-note').textContent={direct:'Uses the latest survey until a new one is available.',mean:'Smooths out noise, but can respond more slowly to stock changes.',filter:'Tracks fish ages using past catches, then updates the estimate with each survey.'}[$('estimator').value];
+ $('estimator-note').textContent={assessment:'Fits survey data to predicted numbers at age.',direct:'A simple comparator: scales the latest index using assumed q and an unfished age pattern. Ignores age samples and catch.',mean:'A simple comparator: averages up to 3 indices with a fixed age pattern. Ignores age samples and catch.'}[$('estimator').value];
  $('rule-note').textContent={catchLow:`Catch advice stays at ${$('catchLow').value} t/year.`,fixed:`Catch advice stays at ${$('fixedCatch').value} t/year.`,catchHigh:`Catch advice stays at ${$('catchHigh').value} t/year.`,proportional:'Catch advice is the harvest fraction × estimated spawning biomass.',ramp:`Advice declines below ${pct(+$('trigger').value)} unfished SSB and reaches zero at ${pct(+$('limit').value)}.`,smooth:`The ramp’s advice changes by at most ±${pct(+$('smoothCap').value)} per year, with a closure override and reopening exception.`,fmsy:'Targets a chosen multiple of model FMSY each year. Estimated abundance converts the F target into catch advice.',framp:'Reduces the F target between the biomass trigger and limit, with closure at the limit. Estimated abundance converts F into catch advice.'}[selected];
 }
 function setStatus(message,error=false){$('status').textContent=message;$('status').classList.toggle('error',error);}
@@ -33,7 +33,7 @@ function run(){
  let c;try{c=configuration();}catch(e){setStatus(e.message,true);document.dispatchEvent(new CustomEvent('mse:error'));return;}
  if(worker){worker.terminate();worker=null;}
  const id=++token;busy=true;dirty=false;$('run').disabled=true;$('csv').disabled=true;$('history-csv').disabled=true;progress(0);setStatus('Testing eight fishing rules…');document.dispatchEvent(new CustomEvent('mse:start'));
- const done=r=>{if(id!==token)return;worker?.terminate();worker=null;result=r;busy=false;$('run').disabled=false;$('csv').disabled=dirty;$('history-csv').disabled=dirty;progress(1);$('year').max=c.years;$('year').value=Math.min(+$('year').value,c.years);setStatus(dirty?'Completed. Settings changed during the run; update to apply them.':`${c.reps.toLocaleString()} possible futures · ${c.years} years · eight fishing rules.`);render();document.dispatchEvent(new CustomEvent('mse:result'));try{localStorage.setItem('mse-classroom-v3',JSON.stringify({...c,rule:selected}));}catch{};};
+ const done=r=>{if(id!==token)return;worker?.terminate();worker=null;result=r;busy=false;$('run').disabled=false;$('csv').disabled=dirty;$('history-csv').disabled=dirty;progress(1);$('year').max=c.years;$('year').value=Math.min(+$('year').value,c.years);setStatus(dirty?'Completed. Settings changed during the run; update to apply them.':`${c.reps.toLocaleString()} possible futures · ${c.years} years · eight fishing rules.`);render();document.dispatchEvent(new CustomEvent('mse:result'));try{localStorage.setItem('mse-classroom-v4',JSON.stringify({...c,rule:selected}));}catch{};};
  const fail=e=>{if(id!==token)return;busy=false;$('run').disabled=false;setStatus('The run could not finish: '+e.message,true);document.dispatchEvent(new CustomEvent('mse:error'));};
  try{
   const source=$('mse-model').textContent+`\nself.onmessage=e=>{try{const r=MSELab.runEnsemble(e.data,p=>postMessage({type:'progress',value:p}));postMessage({type:'result',value:r});}catch(err){postMessage({type:'error',message:err.message});}};`;
@@ -65,10 +65,10 @@ function renderTable(){
 function renderTrace(){
  const c=result.config,r=current(),t=+$('year').value-1,path=r.path;
  $('year-value').textContent=t+1;$('next').disabled=t===c.years-1;
- const values=[['True SSB',path.ssb[t],'truth','t'],['Survey measurement',path.survey[t],'manager','t'],['Estimated SSB',path.estimate[t],'manager','t'],['Allowed catch',path.advice[t],'manager','t'],['F target',path.targetF[t],'manager','/ year'],['Actual F',path.F[t],'truth','/ year'],['Actual catch',path.catch[t],'truth','t'],['Next year’s SSB',path.ssb[t+1],'truth','t']];
- $('trace').innerHTML=values.map(([label,value,role,unit])=>`<div class="trace-item ${role} ${['F target','Actual F','Next year’s SSB'].includes(label)?'extra-trace':''}"><small>${globalThis.MSEVisuals?.iconForLabel(label)||''}${label}</small><div class="trace-value">${value===null?(unit==='t'?'No survey':'Catch rule'):`${num(value,unit==='t'?1:3)} <span>${unit}</span>`}</div></div>`).join('');
+ const values=[['True SSB',path.ssb[t],'truth','t'],['Survey index',path.survey[t],'manager','index units'],['Survey ages',path.ageComp[t]?m.sum(path.ageComp[t]):null,'manager','fish aged'],['Estimated SSB',path.estimate[t],'manager','t'],['Allowed catch',path.advice[t],'manager','t'],['F target',path.targetF[t],'manager','/ year'],['Actual F',path.F[t],'truth','/ year'],['Actual catch',path.catch[t],'truth','t'],['Next year’s SSB',path.ssb[t+1],'truth','t']];
+ $('trace').innerHTML=values.map(([label,value,role,unit])=>`<div class="trace-item ${role} ${['F target','Actual F','Next year’s SSB'].includes(label)?'extra-trace':''}"><small>${globalThis.MSEVisuals?.iconForLabel(label)||''}${label}</small><div class="trace-value">${value===null?(label==='F target'?'Catch rule':label==='Survey ages'?'No age sample':'No index'):`${num(value,unit==='t'?1:3)} <span>${unit}</span>`}</div></div>`).join('');
  const cap=path.capped?` Some quotas hit the fishing-capacity ceiling (${pct(r.metrics.capFraction,1)} of all trial-years).`:'';
- $('trace-detail').textContent=`${r.name}. One possible future, not the median. ${path.survey[t]===null?'No new survey this year. ':''}The operating model knows the true state; the decision procedure does not.${cap}`;
+ $('trace-detail').textContent=`${r.name}. One possible future, not the median. ${!path.surveyVisits[t]?'No new survey this year. ':''}The operating model knows the true state; the decision procedure does not.${cap}`;
 }
 function svgNode(tag,attrs={},text){const a=document.createElementNS('http://www.w3.org/2000/svg',tag);for(const [k,v]of Object.entries(attrs))a.setAttribute(k,v);if(text!==undefined)a.textContent=text;return a;}
 function tickStep(span,n=4){const raw=span/n,p=Math.pow(10,Math.floor(Math.log10(raw||1))),v=raw/p;return(v<=1?1:v<=2?2:v<=2.5?2.5:v<=5?5:10)*p;}
@@ -109,10 +109,10 @@ function renderCharts(){
  const hw=P.W/hist.years*.8;
  hist.F.forEach((F,i)=>P.marks.append(svgNode('rect',{x:P.X(i+1)-hw/2,y:P.Y(F),width:hw,height:P.top+P.H-P.Y(F),fill:colors.blue})));
  hover(P,i=>{i=Math.max(1,Math.min(hist.years,i));return['Historical fishing year '+i,'Prescribed F: '+num(hist.F[i-1],3)+' / year','Catch: '+num(hist.catch[i-1],1)+' t','End SSB: '+pct(hist.ssb[i]/1000,1)+' unfished'];});
- const showObserved=$('show-history-observations')?.checked;const hmax=Math.max(100,...hist.ssb.map(v=>v/10),...(showObserved?hview.estimate.map(v=>v/10):[]),...(showObserved?hview.survey.filter(Number.isFinite).map(v=>v/10):[]));
- P=makePlot('history-ssb-chart',{xMax:hist.years,yMax:niceMax(hmax*1.05),xTitle:'Years before management',yTitle:'SSB (% of unfished level)',title:'Historical SSB, surveys and estimates',percent:true,integerX:true});
+ const showObserved=$('show-history-observations')?.checked;const hmax=Math.max(100,...hist.ssb.map(v=>v/10),...(showObserved?hview.estimate.map(v=>v/10):[]));
+ P=makePlot('history-ssb-chart',{xMax:hist.years,yMax:niceMax(hmax*1.05),xTitle:'Years before management',yTitle:'SSB (% of unfished level)',title:'Historical true and estimated SSB',percent:true,integerX:true});
  line(P,hist.ssb.map((v,i)=>({x:i,y:v/10})),colors.teal,2.5);if(showObserved)line(P,hview.estimate.map((v,i)=>({x:i,y:v/10})),colors.blue,1.5);
- hview.survey.forEach((v,i)=>{if(showObserved&&v!==null)P.marks.append(svgNode('circle',{cx:P.X(i),cy:P.Y(v/10),r:2.6,fill:colors.orange}));});
+
  P.marks.append(svgNode('circle',{cx:P.X(hist.years),cy:P.Y(result.initial.SSB/10),r:4.5,fill:colors.teal}));
  hover(P,i=>{i=Math.max(0,Math.min(hist.years,i));return['Historical year '+i,'True SSB: '+num(hist.ssb[i],1)+' t',i===hist.years?'Projection starts here':'Next supplied F: '+num(hist.F[i],3)+' / year'];});
  // Time series across replicate futures.
@@ -124,11 +124,13 @@ function renderCharts(){
  P=makePlot('catch-chart',{xMin:1,xMax:c.years,yMax:niceMax(Math.max(1,...catches.map(q=>q.hi),...path.catch)*1.05),xTitle:'Decision year',yTitle:'Actual catch (t)',title:'Realized catch, median and 10th to 90th percentile across futures',integerX:true});
  band(P,catches,col);line(P,path.catch.map((v,i)=>({x:i+1,y:v})),colors.muted,1.1,'4,3');line(P,catches.map(q=>({x:q.x,y:q.mid})),col,2.5);cursor(P,t+1);
  hover(P,i=>{i=Math.max(1,Math.min(c.years,i));const q=catches[i-1];return['Decision year '+i,'Median actual catch: '+num(q.mid,1)+' t','10th–90th: '+num(q.lo,1)+'–'+num(q.hi,1)+' t','One future: '+num(path.catch[i-1],1)+' t'];});
- P=makePlot('observation-chart',{xMin:1,xMax:c.years,yMax:niceMax(Math.max(...path.ssb.slice(0,-1),...path.estimate,...path.survey.filter(Number.isFinite))*1.06),xTitle:'Decision year',yTitle:'SSB (tonnes)',title:'One future: true SSB, noisy survey index and estimated SSB',integerX:true});
+ const assessed=path.assessment,fullAssessment=c.estimator==='assessment';
+ const assessmentBand=assessed.map((q,i)=>({x:i+1,lo:q.lo,hi:q.hi}));
+ P=makePlot('observation-chart',{xMin:1,xMax:c.years,yMax:niceMax(Math.max(1,...path.ssb.slice(0,-1),...path.estimate,...(fullAssessment?assessed.map(q=>q.hi):[]))*1.06),xTitle:'Decision year',yTitle:'SSB (tonnes)',title:'True SSB and the assessment estimate used for fishing decisions',integerX:true});
+ if(fullAssessment)band(P,assessmentBand,col);
  line(P,path.ssb.slice(0,-1).map((v,i)=>({x:i+1,y:v})),colors.muted,1.5);
- line(P,path.estimate.map((v,i)=>({x:i+1,y:v})),col,2.2);
- path.survey.forEach((v,i)=>{if(v!==null)P.marks.append(svgNode('circle',{cx:P.X(i+1),cy:P.Y(v),r:2.6,fill:colors.orange}));});cursor(P,t+1);
- hover(P,i=>{i=Math.max(1,Math.min(c.years,i));return['Decision year '+i,'True SSB: '+num(path.ssb[i-1],1)+' t','Survey: '+(path.survey[i-1]===null?'not scheduled':num(path.survey[i-1],1)+' t'),'Estimate: '+num(path.estimate[i-1],1)+' t'];});
+ line(P,path.estimate.map((v,i)=>({x:i+1,y:v})),col,2.2);cursor(P,t+1);
+ hover(P,i=>{i=Math.max(1,Math.min(c.years,i));const a=assessed[i-1];return['Decision year '+i,'True SSB: '+num(path.ssb[i-1],1)+' t','Estimated SSB: '+num(a.ssb,1)+' t',fullAssessment?'Approximate 80% range: '+num(a.lo,1)+'–'+num(a.hi,1)+' t':'Index shortcut: fixed age pattern'];});
  // Age structure is the actual state in the selected illustrative future.
  const N=path.N[t],total=m.sum(N),proportion=N.map(x=>total>0?100*x/total:0);
  P=makePlot('age-chart',{xMin:.5,xMax:stock.A+.5,yMax:niceMax(Math.max(1,...proportion)*1.08),xTitle:'Age (years)',yTitle:'Share of fish (%)',title:'True age composition at the beginning of the selected decision year',percent:true,integerX:true});
@@ -157,7 +159,7 @@ function renderCharts(){
  line(P,curve,col,2.5);P.marks.append(svgNode('circle',{cx:P.X(d*100),cy:P.Y(point),r:5,fill:colors.orange,stroke:'#fff','stroke-width':1.5}));
  $('hcr-title').textContent='The rule: '+r.name;
  $('hcr-legend').textContent=isF?'F target':'Allowed catch';
- $('hcr-caption').textContent=isF?`Full-rate target = ${num(c.Fmultiplier,2)} × management FMSY (${num(managerRef.Fmsy,3)}/year)${selected==='framp'?', reduced below the biomass trigger':''}. The ${c.estimator==='filter'?'filter’s estimated age structure':'assumed unfished age shape, scaled to estimated SSB'} converts target F into catch advice. Actual F can differ from the target.`:selected==='smooth'?`This curve uses previous advice of ${previous===null?'none in year 1':num(previous,1)+' t'}. The ±${pct(c.smoothCap)} cap yields to closure below the limit; reopening uses the raw ramp.`:['catchLow','fixed','catchHigh'].includes(selected)?`Fixed advice = ${num(path.advice[t],1)} t/year. Edit catch A, B and C to compare different quotas. Actual catch can differ from advice.`:`Harvest fraction = ${pct(c.harvest)} of estimated spawning biomass${selected==='ramp'?', reduced between the limit and full-rate trigger':''}.`;
+ $('hcr-caption').textContent=isF?`Full-rate target = ${num(c.Fmultiplier,2)} × management FMSY (${num(managerRef.Fmsy,3)}/year)${selected==='framp'?', reduced below the biomass trigger':''}. The ${c.estimator==='assessment'?'assessment’s estimated age structure':'assumed unfished age shape, scaled to estimated SSB'} converts target F into catch advice. Actual F can differ from the target.`:selected==='smooth'?`This curve uses previous advice of ${previous===null?'none in year 1':num(previous,1)+' t'}. The ±${pct(c.smoothCap)} cap yields to closure below the limit; reopening uses the raw ramp.`:['catchLow','fixed','catchHigh'].includes(selected)?`Fixed advice = ${num(path.advice[t],1)} t/year. Edit catch A, B and C to compare different quotas. Actual catch can differ from advice.`:`Harvest fraction = ${pct(c.harvest)} of estimated spawning biomass${selected==='ramp'?', reduced between the limit and full-rate trigger':''}.`;
  hover(P,x=>['Estimated SSB: '+num(x,1)+'% unfished',(isF?'F target: '+num(ruleValue(x/100*1000),3)+' / year':'Catch advice: '+num(ruleValue(x/100*1000),1)+' t')],false);
  // Biological stock–recruitment function, conditional process band, and actual recruits.
  const sxmax=Math.max(150,Math.ceil(Math.max(...path.ssb.slice(0,-1),...hist.ssb)/10*1.05/25)*25);
@@ -179,17 +181,18 @@ function downloadCSV(head,rows,filename){
  const a=document.createElement('a'),url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 function summaryCSV(){if(!result)return;const c=result.config,head=['model_version','strategy','species_archetype','projection_years','futures','seed','historical_years','historical_F_series_per_year','survey_CV','survey_bias','survey_interval_years','estimator','assumed_M_multiplier','projection_recruitment_CV','recruitment_relationship','recruitment_steepness','projection_start_SSB_fraction','implementation_CV','harvest_fraction','biomass_limit_fraction','biomass_trigger_fraction','catch_advice_change_cap','fixed_catch_A_t','fixed_catch_B_t','fixed_catch_C_t','FMSY_multiplier','management_FMSY_per_year','management_MSY_t_per_year','management_SSBMSY_t','true_model_FMSY_per_year','risk','crossings','risk_95CI_low','risk_95CI_high','mean_catch_t_per_year','mean_absolute_annual_catch_change_t','median_terminal_SSB_fraction','fraction_closed_years','fraction_capacity_limited_years'];
- const rows=result.rules.map(r=>{const v=r.metrics,ref=result.reference.manager;return[result.version,r.name,c.species,c.years,c.reps,c.seed,result.history.years,JSON.stringify(c.historicalF),c.surveyCV,c.surveyBias,c.surveyEvery,c.estimator,c.Mfactor,c.recruitCV,c.srType,c.steepness,result.initial.SSB/1000,c.implementationCV,c.harvest,c.limit,c.trigger,c.smoothCap,c.catchLow,c.fixedCatch,c.catchHigh,c.Fmultiplier,ref.Fmsy,ref.MSY,ref.SSBmsy,result.reference.truth.Fmsy,v.risk,v.crossings,...v.riskInterval,v.meanCatch,v.change,v.terminal,v.closed,v.capFraction];});
+ const extra=['surveyData','surveyQ','surveyMinAge','ageSample','useAgeData','assumedQ','assessmentProcessCV'];head.push(...extra);
+ const rows=result.rules.map(r=>{const v=r.metrics,ref=result.reference.manager;return[result.version,r.name,c.species,c.years,c.reps,c.seed,result.history.years,JSON.stringify(c.historicalF),c.surveyCV,c.surveyBias,c.surveyEvery,c.estimator,c.Mfactor,c.recruitCV,c.srType,c.steepness,result.initial.SSB/1000,c.implementationCV,c.harvest,c.limit,c.trigger,c.smoothCap,c.catchLow,c.fixedCatch,c.catchHigh,c.Fmultiplier,ref.Fmsy,ref.MSY,ref.SSBmsy,result.reference.truth.Fmsy,v.risk,v.crossings,...v.riskInterval,v.meanCatch,v.change,v.terminal,v.closed,v.capFraction,...extra.map(k=>c[k])];});
  downloadCSV(head,rows,`mse-${c.species}-seed-${c.seed}.csv`);
 }
 function historyCSV(){if(!result)return;const h=result.history,v=result.historicalView;
- const head=['model_version','historical_fishing_year','prescribed_F_per_year','true_SSB_start_t','catch_t','BH_recruits_to_age1_next_year','true_SSB_end_t','survey_start_t_first_replicate','estimate_start_t_first_replicate'];
+ const head=['model_version','historical_fishing_year','prescribed_F_per_year','true_SSB_start_t','catch_t','BH_recruits_to_age1_next_year','true_SSB_end_t','survey_index_relative_units_first_replicate','estimate_start_t_first_replicate'];
  const rows=h.F.map((F,i)=>[result.version,i+1,F,h.ssb[i],h.catch[i],h.recruits[i],h.ssb[i+1],v.survey[i]??'',v.estimate[i]]);
  downloadCSV(head,rows,`mse-historical-${result.config.species}.csv`);
 }
 // Bind controls after every required element exists.
 $('historicalF').value=m.DEFAULTS.historicalF.join(', ');
-try{const saved=JSON.parse(localStorage.getItem('mse-classroom-v3')||'null');if(saved){const v=m.check(saved);for(const k of fields)$(k).value=k==='historicalF'?v[k].join(', '):v[k];$('historyPreset').value='custom';selected=m.RULES.some(r=>r.id===saved.rule)?saved.rule:'framp';$('rule').value=selected;}}catch{}
+try{const saved=JSON.parse(localStorage.getItem('mse-classroom-v4')||localStorage.getItem('mse-classroom-v3')||'null');if(saved){const v=m.check(saved.surveyData?saved:{...saved,estimator:'assessment'});for(const k of fields)$(k).value=k==='historicalF'?v[k].join(', '):v[k];$('historyPreset').value='custom';selected=m.RULES.some(r=>r.id===saved.rule)?saved.rule:'framp';$('rule').value=selected;}}catch{}
 fields.forEach(k=>{$(k).addEventListener('input',markDirty);$(k).addEventListener('change',markDirty);});
 $('historyPreset').addEventListener('change',()=>{if($('historyPreset').value!=='custom')$('historicalF').value=m.historicalPreset($('historyPreset').value).join(', ');markDirty();});
 $('historicalF').addEventListener('input',()=>$('historyPreset').value='custom');

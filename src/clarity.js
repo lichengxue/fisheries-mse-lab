@@ -9,11 +9,11 @@ function field(id,label){const input=$(id),wrapper=input?.closest('label'),span=
 function intro(id,title,description){text('#view-'+id+' .view-intro h2',title);text('#view-'+id+' .view-intro h2+p',description);}
 function caption(id,value){const figure=$(id).closest('figure'),old=figure.querySelector('figcaption');if(old)old.hidden=true;const p=document.createElement('p');p.className='caption';p.textContent=value;figure.append(p);}
 function next(id,label,target){const row=document.createElement('div'),b=document.createElement('button');row.className='lesson-next';b.className='btn primary';b.type='button';b.textContent=label+' →';b.addEventListener('click',()=>V.showView(target));row.append(b);$('view-'+id).append(row);}
-for(const [id,label]of Object.entries({stock:'Fish stock',data:'Survey',rules:'Fishing rules',results:'Compare',future:'One future',people:'People & money'})){const b=$('tab-'+id),number=b.querySelector('span');b.replaceChildren(number,document.createTextNode(label));}
+for(const [id,label]of Object.entries({stock:'Fish stock',data:'Survey',assessment:'Assessment',rules:'Fishing rules',results:'Compare',future:'One future',people:'People & money'})){const b=$('tab-'+id),number=b.querySelector('span');b.replaceChildren(number,document.createTextNode(label));}
 text('.mast h1','Fisheries MSE lab');text('.mast>div>p:last-child','Test fishing rules in a simulated fishery. This is management strategy evaluation (MSE).');
 all('.view-badge,.view-intro .eyebrow').forEach(el=>el.hidden=true);
 intro('stock','How does fishing change a fish stock?','Choose a fish and a fishing history. Drag a bar to change fishing pressure and watch the stock respond.');
-intro('data','How well can we measure the stock?','Make the survey more or less noisy. Compare the estimate with the true SSB.');
+intro('data','What does the survey tell us?','One visit can give an abundance index, a sample of fish ages, or both.');
 intro('rules','How should fishing respond?','Choose a rule above. Adjust its settings and see how it responds when the stock changes.');
 intro('results','Which rule gives the best balance?','Compare catch with the chance of the stock becoming too low. Click a dot to choose a rule.');
 intro('future','What happens year by year?','Press Play years to follow one possible future: survey, estimate, decide and catch.');
@@ -26,16 +26,16 @@ text('[data-control-panel=people] .control-heading','People & money');
 all('.control-panel fieldset>legend').forEach(el=>el.hidden=true);
 all('.control-panel .help').forEach(el=>el.hidden=true);
 for(const id of ['life-profile','estimator-note'])$(id).hidden=false;
-field('historyPreset','Fishing history');field('surveyCV','Survey noise (%)');field('surveyBias','Survey over- or under-estimate (%)');field('surveyEvery','How often do we survey?');field('estimator','How do we estimate the stock?');
+field('historyPreset','Fishing history');field('surveyCV','Index noise (%)');field('surveyBias','Survey over- or under-estimate (%)');field('surveyEvery','How often do we survey?');field('estimator','Assessment method');
 field('steepness','How strongly young fish can replenish the stock (h)');field('recruitCV','Year-to-year variation in young fish (%)');
 field('Fmultiplier','Fishing target (× FMSY)');field('harvest','Share of estimated SSB to catch (%)');
 field('limit','Stop fishing below this stock level (%)');field('trigger','Allow full fishing above this stock level (%)');field('smoothCap','Maximum yearly catch change (%)');field('implementationCV','Variation in following catch advice (%)');
 field('years','Years to look ahead');field('reps','Number of possible futures');field('seed','Repeatable random seed');
-field('Mfactor','Assumed natural death rate (× true rate)');
+field('Mfactor','Assumed natural death rate (× true rate)');field('assessmentProcessCV','Allow departures from predicted ages (%)');
 fold([$('steepness').closest('label'),$('recruitCV').closest('label')],'More about young fish');
 text('[data-control-panel=stock] details:has(#historicalF)>summary','Paste your own fishing history');
-fold([$('surveyBias').closest('label'),$('Mfactor-wrap')],'More survey and model settings');
-text('#estimator option[value=direct]','Use the latest survey');text('#estimator option[value=mean]','Average the last 3 surveys');text('#estimator option[value=filter]','Follow fish ages through time');
+
+
 const presets=all('[data-set=surveyCV]');['No noise','Some noise','Very noisy'].forEach((t,i)=>{if(presets[i])presets[i].textContent=t;});
 text('#historyPreset option[value=constant]','Steady fishing');text('#historyPreset option[value=custom]','My own history');text('#historyPreset option[value=unfished]','No fishing');
 const builderMore=fold([one('.history-builder')],'Build a fishing history');one('.history-plots').after(builderMore);
@@ -45,14 +45,9 @@ fold([$('history-csv')],'Download the history');
 fold([$('recruitment-chart').closest('.plots')],'How do adult fish produce young fish?');
 text('.history-plots figure h3','Fishing pressure (F)');text('.history-plots figure:nth-of-type(2) h3','Spawning stock biomass (SSB)');
 caption('history-ssb-chart','Spawning stock biomass (SSB) is the total weight of mature fish, measured in tonnes. How does SSB change when fishing pressure rises or falls?');
-const surveyMore=document.createElement('details'),surveySummary=document.createElement('summary'),surveyLabel=document.createElement('label'),surveyCheck=document.createElement('input');surveyMore.className='learn-more';surveySummary.textContent='Add survey information';surveyLabel.className='soc-check';surveyCheck.type='checkbox';surveyCheck.id='show-history-observations';surveyLabel.append(surveyCheck,document.createTextNode('Show surveys and estimates'));surveyMore.append(surveySummary,surveyLabel);$('history-ssb-chart').closest('figure').append(surveyMore);surveyCheck.addEventListener('change',()=>api.refresh());
+const surveyMore=document.createElement('details'),surveySummary=document.createElement('summary'),surveyLabel=document.createElement('label'),surveyCheck=document.createElement('input');surveyMore.className='learn-more';surveySummary.textContent='Add the assessment estimate';surveyLabel.className='soc-check';surveyCheck.type='checkbox';surveyCheck.id='show-history-observations';surveyLabel.append(surveyCheck,document.createTextNode('Show the assessment estimate'));surveyMore.append(surveySummary,surveyLabel);$('history-ssb-chart').closest('figure').append(surveyMore);surveyCheck.addEventListener('change',()=>api.refresh());
 text('.history-plots .legend>span:first-child','True SSB');text('#inspect-bar>label','Fishing rule');
 const trueKey=one('.history-plots .legend>span:first-child'),sample=document.createElement('i');sample.className='sample';sample.style.background='var(--teal)';trueKey.prepend(sample);
-fold([$('survey-demo').closest('figure')],'See repeated surveys of the same stock');
-text('#view-data .mini-flow','Survey → Estimate → Fishing decision');
-$('observation-chart').closest('figure').querySelector('h3').textContent='The true stock and what the manager sees';
-$('observation-chart').closest('figure').classList.add('full');one('#view-data .plots').prepend($('observation-chart').closest('figure'));
-caption('observation-chart','Gray: true SSB. Dots: surveys. Colored line: the estimate used for fishing decisions.');
 const catchBox=one('.catch-levels'),fBox=document.createElement('div'),uBox=document.createElement('div');
 fBox.className='rule-options';fBox.dataset.forRules='fmsy framp';$('Fmultiplier').closest('label').before(fBox);fBox.append($('Fmultiplier').closest('label'));
 const shortcuts=all('[data-set=Fmultiplier]')[0]?.parentElement;if(shortcuts)fold([shortcuts],'Try another fishing target');
@@ -102,9 +97,9 @@ const roleTools=$('add-role').parentElement;fold([roleTools],'Add, rename or rem
 text('#workshop-settings details:has(#target-controls)>summary','Change what counts as a good outcome');
 $('refresh-ballots').hidden=true;
 all('#workshop-panel>p.footnote').forEach(el=>fold([el],'Further reading'));
-const glossary=document.createElement('section');glossary.className='full-width';glossary.innerHTML='<h3>A few useful terms</h3><p><strong>Stock:</strong> a population of fish. <strong>Spawning stock biomass (SSB):</strong> the total weight of mature fish, measured in tonnes. <strong>Unfished level:</strong> the stock level with no fishing. <strong>Fishing pressure (F):</strong> a rate describing how strongly fishing removes fish.</p><p><strong>Recruitment:</strong> young fish entering the population. This model uses the Beverton–Holt relationship. <strong>Survey noise (CV):</strong> variation in repeated measurements. <strong>Risk:</strong> the share of simulated futures where the SSB falls below the chosen limit at least once.</p><p><strong>Middle outcome (median):</strong> half the outcomes fall above and half below it. The shaded range runs from the 10th to the 90th percentile.</p>';
+const glossary=document.createElement('section');glossary.className='full-width';glossary.innerHTML='<h3>A few useful terms</h3><p><strong>Stock:</strong> a population of fish. <strong>Spawning stock biomass (SSB):</strong> the total weight of mature fish, measured in tonnes. <strong>Unfished level:</strong> the stock level with no fishing. <strong>Fishing pressure (F):</strong> a rate describing how strongly fishing removes fish.</p><p><strong>Recruitment:</strong> young fish entering the population. This model uses the Beverton–Holt relationship. <strong>Survey index:</strong> a relative measure of abundance. <strong>Age composition:</strong> the share of sampled fish at each age. <strong>Assessment:</strong> a model fitted to observations to estimate the stock. <strong>Index noise (CV):</strong> variation in repeated measurements. <strong>Risk:</strong> the share of simulated futures where the SSB falls below the chosen limit at least once.</p><p><strong>Middle outcome (median):</strong> half the outcomes fall above and half below it. The shaded range runs from the 10th to the 90th percentile.</p>';
 one('#model-details .details-grid').prepend(glossary);text('#model-details>summary','Learn more: terms, assumptions & equations');
-next('stock','Next: measure the stock','data');next('data','Next: choose a fishing rule','rules');next('rules','Next: compare outcomes','results');
+next('stock','Next: measure the stock','data');next('data','Next: fit an assessment','assessment');next('assessment','Next: choose a fishing rule','rules');next('rules','Next: compare outcomes','results');
 const questions=fold([one('.scenario-bar')],'Try another classroom question');one('#view-stock .lesson-next').before(questions);
 all('details').forEach(d=>d.addEventListener('toggle',()=>{if(d.open)requestAnimationFrame(()=>api.refresh());}));
 function update(){
@@ -112,7 +107,7 @@ function update(){
  all('.rule-options').forEach(el=>el.hidden=!el.dataset.forRules.split(' ').includes(selected));
  const description={catchLow:'Asks for a fixed catch each year, even when the stock changes.',fixed:'Asks for a fixed catch each year, even when the stock changes.',catchHigh:'Asks for a fixed catch each year, even when the stock changes.',proportional:'Asks for a fixed share of the estimated SSB.',ramp:'Reduces catch as the stock falls, and stops fishing below the limit.',smooth:'Responds to the stock while limiting sudden changes in catch. A closure can override that limit.',fmsy:'Uses the model’s FMSY fishing target each year.',framp:'Uses the FMSY target when the stock is healthy, then reduces fishing as the stock falls.'};
  $('plain-rule-help').textContent=description[selected];$('selected-context').textContent=['fmsy','framp'].includes(selected)?'FMSY = the model’s target fishing rate.':'';
- const observed=$('show-history-observations').checked;all('.history-plots figure:last-child .legend>span').forEach((el,i)=>el.hidden=i>0&&!observed);
+ const observed=$('show-history-observations').checked;all('.history-plots figure:last-child .legend>span').forEach((el,i)=>el.hidden=i===1||(i>0&&!observed));
  const view=one('.view-panel:not([hidden])')?.id;one('.scenario-bar').hidden=view!=='view-stock';
 
 }
