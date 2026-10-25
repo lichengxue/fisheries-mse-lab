@@ -1,0 +1,18 @@
+/* A separate survey and assessment step, with detail opened only when needed. */
+.flow-nav>div{overflow-x:auto;scrollbar-width:thin}
+.sample-year-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:16px 0}
+.sample-year-controls label{font-size:inherit;font-weight:600}
+.sample-year-controls input[type=number]{width:86px;font-size:inherit;min-height:44px}
+.assessment-cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0}
+.assessment-cards>div{background:#fff;border:1px solid var(--line);border-top:3px solid var(--teal);border-radius:8px;padding:16px;min-width:0}
+.assessment-cards small{display:block;font-size:1rem;color:var(--muted);line-height:1.5}
+.assessment-cards strong{display:block;font-size:1.5rem;margin-top:6px;font-weight:600}
+#view-data .mini-flow,#view-assessment .mini-flow{background:#e5f0ed;color:#24645b;padding:12px 15px;border-radius:6px;font-size:1rem;line-height:1.6;display:block}
+#view-assessment>.learn-more>.plots{margin-top:20px}
+#assessment-data-note,#survey-data-note{margin:14px 0 20px;line-height:1.6}
+#assessment-csv{margin-top:18px}
+#simulation-controls .lesson-help{font-size:1rem;line-height:1.6;color:var(--muted)}
+.chart-empty{font-size:1rem;line-height:1.6;margin:0}
+.chart.no-data{height:auto!important;min-height:130px}
+.chart.no-data .chart-empty{padding:35px 12px}
+@media(max-width:550px){.assessment-cards{grid-template-columns:1fr}.assessment-cards strong{font-size:1.35rem}.sample-year-controls{gap:8px}}
