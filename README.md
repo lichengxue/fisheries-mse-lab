@@ -8,10 +8,12 @@ Choose a fish, try fishing rules, and see what could happen. This browser lab in
 
 ![The student view](assets/interface-overview.png)
 
+**Spawning stock biomass (SSB)** is the total weight of mature fish, measured in tonnes.
+
 ## Start here
 
 1. **Fish stock:** choose short-, medium- or long-lived fish and a fishing history. Drag a bar to change fishing pressure.
-2. **Survey:** change how noisy the measurements are. Compare the true breeding stock with the estimate.
+2. **Survey:** change how noisy the measurements are. Compare the true SSB with the estimate.
 3. **Fishing rules:** choose a rule and adjust its settings. The page shows the controls relevant to that rule.
 4. **Compare:** look at catch and the chance of a low stock.
 5. **One future:** press **Play years** to follow a possible outcome.
@@ -40,9 +42,9 @@ Choose **Code → Download ZIP**, extract the folder, and open **index.html**. N
 
 The operating model tracks fish by age, with short-lived anchovy-like, medium-lived hake-like and long-lived rockfish-like presets. These are illustrative combinations, not fitted assessments. Historical annual fishing pressure F drives the population; Beverton–Holt stock–recruitment supplies young fish. The final historical population starts each future.
 
-Future choices include three fixed catches, a fixed share of estimated breeding fish, stock-responsive catch rules, and FMSY fishing targets. Surveys have adjustable noise, bias and frequency. Estimates use the latest survey, a recent average or a simple age-structured filter. All eight rules share random conditions for fair comparisons.
+Future choices include three fixed catches, a fixed share of estimated SSB, stock-responsive catch rules, and FMSY fishing targets. Surveys have adjustable noise, bias and frequency. Estimates use the latest survey, a recent average or a simple age-structured filter. All eight rules share random conditions for fair comparisons.
 
-FMSY, MSY and breeding-stock reference points are calculated from the assumed biology. Stock and catch plots include median and 10th–90th percentile outcomes. Optional tables expose risk, catch variation, reference points, economic uncertainty and objective scores. The 29 checks cover population dynamics, historical forcing, estimation, management rules, reproducibility, accounting, scoring and shared limits.
+FMSY, MSY and SSB reference points are calculated from the assumed biology. Stock and catch plots include median and 10th–90th percentile outcomes. Optional tables expose risk, catch variation, reference points, economic uncertainty and objective scores. The 29 checks cover population dynamics, historical forcing, estimation, management rules, reproducibility, accounting, scoring and shared limits.
 
 </details>
 
