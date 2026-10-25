@@ -17,7 +17,7 @@ Choose a fish, try fishing rules, and see what could happen. This browser lab in
 3. **Assessment:** choose the assessment interval (default: every year), fit an age-structured model, and inspect estimated SSB. Try leaving ages out of the fit.
 4. **Fishing rules:** choose a rule and adjust its settings. The page shows the controls relevant to that rule.
 5. **Compare:** use a radar to compare up to three MPs across five goals, or choose two goals for a trade-off plot. See the original values and change the shared class targets when needed.
-6. **One future:** press **Play feedback** to watch surveys, assessments, catch advice and population change. **Try a 3-year cycle** shows advice held in years 1–3, then renewed in year 4.
+6. **History & feedback:** choose MPs and watch their SSB and catch paths together on one history-to-feedback timeline. Replay from history, start at feedback, or show the full run.
 7. **People & money:** explore income, jobs and different groups' priorities.
 
 **Text size:** the default labels and plot text are larger. Choose **Text size → Larger** at the top for extra-large text; the browser remembers your choice. Fish, boat, catch, income and group symbols appear beside their text labels.
@@ -34,13 +34,17 @@ The **Compare** screen shows the trade-offs among management procedures (MPs). R
 
 ![MP trade-offs across five goals](assets/mp-tradeoffs.png)
 
-## Watch the feedback cycle
+## Follow several MPs through time
 
-Choose **One future → Assessment interval**, or set the same control on **Assessment**. Assessments begin in year 1 and repeat every 1–10 years. The default is annual assessment; older saved scenarios keep this behavior.
+Open **History & feedback → Choose MPs to follow**. Choose any subset of the eight MPs; three are selected initially. Every MP starts from the same historical population, then follows its own fishing decisions under matched random conditions.
 
-**Play feedback** highlights each step. At an assessment, stored survey data update the estimate and the rule sets annual catch advice for the coming period. Between assessments, the population and its prediction change each year while advice stays fixed. Actual catch can differ from advice. Pause, change playback speed, or click a year in the period strip. Open **See this year's numbers** to download the full future.
+The plots show the whole historical record in gray and a separate colored feedback path for each selected MP. **0 is the start of feedback**. **Play timeline** advances all paths together. **Play from history** replays historical fishing first and then continues through the entire feedback period. **Start of feedback** jumps to the handoff; **Show full run** reveals all years and final SSB values. Pause, scrub the timeline, or type a timeline year.
 
-![Assessment, catch advice and population feedback](assets/feedback-cycle.png)
+Assessments are highlighted as they occur. Each MP updates its own estimate and sets its own annual catch advice, held until the next assessment. Change the interval in the sidebar (default: every year), or choose **Try a 3-year cycle**. The catch plot switches between actual catch and annual advice. Advice lines can extend to the next assessment because that advice is already known; population and actual-catch paths advance only as years finish.
+
+Changing the selected MPs does not rerun or change a trajectory. Colors match the rest of the lab. **Download selected MP trajectories** includes history once plus all years for the chosen MPs. Save/load scenario includes the selected MPs and playback position. The expandable **Inspect one MP in more detail** retains numerical traces and ensemble bands.
+
+![Shared history followed by different MP population paths](assets/feedback-cycle.png)
 
 ## People and money
 
@@ -65,7 +69,7 @@ Future choices include three fixed catches, a fixed share of estimated SSB, stoc
 
 The assessment is a simplified sequential fit, not a whole-history stock assessment. Its approximate 80% SSB range is conditional on assumed biology and q; it omits several sources of uncertainty. The model never receives true abundance or true F. [Full assessment equations and limitations](docs/MODEL.md).
 
-FMSY, MSY and SSB reference points are calculated from the assumed biology. Stock and catch plots include median and 10th–90th percentile outcomes. Optional tables expose risk, catch variation, reference points, economic uncertainty and objective scores. The 48 checks cover population dynamics, historical forcing, estimation, management rules, reproducibility, accounting, scoring and shared limits.
+FMSY, MSY and SSB reference points are calculated from the assumed biology. Stock and catch plots include median and 10th–90th percentile outcomes. Optional tables expose risk, catch variation, reference points, economic uncertainty and objective scores. The 54 checks cover population dynamics, historical forcing, estimation, management rules, reproducibility, accounting, scoring and shared limits.
 
 </details>
 
@@ -86,7 +90,7 @@ Open `http://127.0.0.1:8000`. Set `PORT` to choose another port. Rebuild after e
 | --- | --- |
 | `src/model.js` | Age-based population, history, surveys, estimation and fishing rules |
 | `src/tradeoffs.js`, `src/tradeoff-ui.js`, `src/tradeoff.css` | Shared objective scales, radar and selectable two-goal MP comparisons |
-| `src/feedback.js`, `src/feedback.css` | Staged assessment/advice/population playback and one-future export |
+| `src/trajectory.js`, `src/feedback.js`, `src/feedback.css` | Shared-history MP trajectories, synchronized feedback playback and selected-MP export |
 | `src/assessment-ui.js`, `src/assessment.css` | Separate survey and assessment screens, data-fit plots and joint data export |
 | `src/app.js` | Simulation worker, base plots and exports |
 | `src/ui.js`, `src/ui.css` | Guided navigation and interactive controls |
@@ -96,7 +100,7 @@ Open `http://127.0.0.1:8000`. Set `PORT` to choose another port. Rebuild after e
 | `src/workshop.js`, `src/workshop.css` | Income, jobs and classroom discussion |
 | `src/ui-helpers.js` | Fishing-history builder and CSV parsing |
 | `src/page.html` | Page template and detailed explanations |
-| `tests/` | 48 model and consistency checks |
+| `tests/` | 54 model and consistency checks |
 | `scripts/build.cjs` | Packs the offline page and Pages artifact |
 
 </details>
