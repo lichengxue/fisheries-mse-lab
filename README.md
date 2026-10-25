@@ -19,6 +19,8 @@ Choose a fish, try fishing rules, and see what could happen. This browser lab in
 5. **One future:** press **Play years** to follow a possible outcome.
 6. **People & money:** explore income, jobs and different groups' priorities.
 
+**Text size:** the default labels and plot text are larger. Choose **Text size → Larger** at the top for extra-large text; the browser remembers your choice. Fish, boat, catch, income and group symbols appear beside their text labels.
+
 The question at the top of each page is the starting point. Extra settings, tables and equations start closed; open them when needed. On a smaller screen, use **Edit … settings** to reach the controls.
 
 **Save / Load scenario** keeps your settings and discussion rounds. Plot buttons enlarge or download a figure. CSVs and workshop reports are inside the relevant expandable panels.
@@ -66,6 +68,7 @@ Open `http://127.0.0.1:8000`. Set `PORT` to choose another port. Rebuild after e
 | `src/model.js` | Age-based population, history, surveys, estimation and fishing rules |
 | `src/app.js` | Simulation worker, base plots and exports |
 | `src/ui.js`, `src/ui.css` | Guided navigation and interactive controls |
+| `src/visuals.js`, `src/readability.css` | Shared fisheries symbols, larger typography and remembered text-size preference |
 | `src/clarity.js`, `src/clarity.css` | Short teaching path, plain labels and optional detail |
 | `src/economics.js` | Economic accounting and stakeholder scores |
 | `src/workshop.js`, `src/workshop.css` | Income, jobs and classroom discussion |
