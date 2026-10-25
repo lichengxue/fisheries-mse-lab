@@ -19,7 +19,7 @@
   ];
   const DEFAULTS={species:'medium',surveyCV:0.25,surveyBias:0,surveyEvery:1,
     surveyData:'both',surveyQ:0.1,surveyMinAge:1,ageSample:100,
-    estimator:'assessment',useAgeData:1,assumedQ:0.1,assessmentProcessCV:0.15,recruitCV:0.45,implementationCV:0.10,historicalF:historicalPreset('development'),
+    estimator:'assessment',useAgeData:1,assumedQ:0.1,assessmentProcessCV:0.40,recruitCV:0.45,implementationCV:0.10,historicalF:historicalPreset('development'),
     harvest:0.18,limit:0.20,trigger:0.50,smoothCap:0.20,Mfactor:1,
     srType:'BH',steepness:0.75,catchLow:50,fixedCatch:100,catchHigh:150,Fmultiplier:1,
     years:60,reps:200,seed:38617,rule:'framp'};
