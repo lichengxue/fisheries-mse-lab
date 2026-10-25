@@ -1,6 +1,8 @@
 /* Shared, decorative symbols. Text labels carry the meaning. */
 (function(root){
 'use strict';
+// Keep each management procedure's color identical in every plot and legend.
+const ruleColors=Object.freeze({catchLow:'#8A7514',fixed:'#D55E00',catchHigh:'#C43B55',proportional:'#8B5FBF',ramp:'#259BBD',smooth:'#008B67',fmsy:'#A64D79',framp:'#0072B2'});
 const paths={
  fish:'<path d="M7 12 2 7v10l5-5Z"/><path d="M7 12c4-7 11-7 15 0-4 7-11 7-15 0Z"/><circle cx="17.5" cy="10.5" r=".8" fill="currentColor" stroke="none"/><path d="m10 7 3-3 3 3m-6 10 3 3 3-3"/>',
  boat:'<path d="M3 14h18l-3 5H7l-4-5Zm5 0V8h8v6M10 8V5h4v3M2 21c2 1 3 1 5 0 2 1 3 1 5 0 2 1 3 1 5 0 2 1 3 1 5 0"/>',
@@ -35,5 +37,5 @@ function initialize(){
  function apply(){document.documentElement.dataset.textSize=select.value;try{localStorage.setItem('mse-text-size',select.value);}catch{}requestAnimationFrame(()=>api.refresh());}
  select.addEventListener('change',apply);apply();decorate();document.addEventListener('mse:render',decorate);
 }
-root.MSEVisuals={icon,fish,iconForLabel,roleIcon,initialize};
+root.MSEVisuals={icon,fish,iconForLabel,roleIcon,initialize,ruleColors};
 })(globalThis);

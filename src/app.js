@@ -2,7 +2,7 @@
 'use strict';
 const $=id=>document.getElementById(id),m=globalThis.MSELab;
 const colors={teal:'#117d79',orange:'#b4582f',blue:'#3a78a9',muted:'#586d76',purple:'#855c99'};
-const ruleColor={catchLow:'#708c56',fixed:colors.muted,catchHigh:'#a56b40',proportional:colors.blue,ramp:colors.teal,smooth:colors.purple,fmsy:'#b04462',framp:'#315a91'};
+const ruleColor=globalThis.MSEVisuals.ruleColors;
 const fields=['species','historicalF','surveyCV','surveyBias','surveyEvery','surveyData','surveyQ','surveyMinAge','ageSample','estimator','useAgeData','assumedQ','assessmentProcessCV','recruitCV','implementationCV','harvest','limit','trigger','smoothCap','Mfactor','steepness','catchLow','fixedCatch','catchHigh','Fmultiplier','years','reps','seed'];
 let result=null,selected='framp',worker=null,token=0,busy=false,dirty=false;
 const num=(n,d=1)=>Number(n).toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d});

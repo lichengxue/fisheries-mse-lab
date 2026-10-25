@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 const $=id=>document.getElementById(id),api=globalThis.__mseDemo,m=globalThis.MSELab,helpers=globalThis.MSEInterface;
-const colors={catchLow:'#708c56',fixed:'#586d76',catchHigh:'#ac6b35',proportional:'#3a78a9',ramp:'#0a7a70',smooth:'#855c99',fmsy:'#b04462',framp:'#315a91'};
+const colors=globalThis.MSEVisuals.ruleColors;
 const names={stock:'Fish stock',data:'Survey',assessment:'Assessment',rules:'Fishing rules',results:'Compare',future:'One future',people:'People & money'};
 const percent=new Set(['recruitCV','surveyCV','surveyBias','assessmentProcessCV','harvest','limit','trigger','implementationCV','smoothCap']);
 const ranges=new Map(),shown=new Set(m.RULES.map(r=>r.id));
@@ -128,7 +128,7 @@ function apply(c){clearTimeout(timer);stopPlayback();suppress=true;api.applyConf
 $('reset-scenario').addEventListener('click',()=>{apply({...m.DEFAULTS,historicalF:m.DEFAULTS.historicalF.slice()});$('historyPreset').value='development';showView('stock');toast('Classroom defaults restored.');});
 document.querySelectorAll('[data-scenario]').forEach(b=>b.addEventListener('click',()=>{const c={...m.DEFAULTS};let key='stock';if(b.dataset.scenario==='rebuild'){c.species='long';c.historicalF=m.historicalPreset('rebuilding');c.years=100;c.rule='framp';}if(b.dataset.scenario==='noise'){c.surveyCV=.5;c.surveyEvery=2;c.estimator='direct';key='data';}if(b.dataset.scenario==='catch'){c.species='short';const ref=m.referencePoints(m.makeStock('short'),c);c.catchLow=Math.round(ref.MSY*.5);c.fixedCatch=Math.round(ref.MSY);c.catchHigh=Math.round(ref.MSY*1.5);key='results';}apply(c);showView(key);toast('Classroom scenario loaded.');}));
 $('msy-catches').addEventListener('click',()=>{try{const c=api.configuration(),ref=m.referencePoints(m.makeStock(c.species,c.Mfactor),c);['catchLow','fixedCatch','catchHigh'].forEach((id,i)=>{$(id).value=Math.min(1000,Math.round(ref.MSY*[.5,1,1.5][i]));});emit($('fixedCatch'));syncControls();toast('Catch levels set using the current management-model MSY.');}catch(e){toast(e.message);}});
-$('save-scenario').addEventListener('click',()=>{try{saveFile(JSON.stringify({format:'fisheries-mse-scenario',interfaceVersion:'1.8.0',config:api.configuration(),workshop:globalThis.MSEWorkshop?.getState(),comparison:globalThis.MSETradeoffView?.getState()},null,2),'application/json','fisheries-mse-scenario.json');}catch(e){toast(e.message);}});
+$('save-scenario').addEventListener('click',()=>{try{saveFile(JSON.stringify({format:'fisheries-mse-scenario',interfaceVersion:'1.8.1',config:api.configuration(),workshop:globalThis.MSEWorkshop?.getState(),comparison:globalThis.MSETradeoffView?.getState()},null,2),'application/json','fisheries-mse-scenario.json');}catch(e){toast(e.message);}});
 $('load-scenario').addEventListener('click',()=>$('scenario-file').click());
 $('scenario-file').addEventListener('change',async()=>{const file=$('scenario-file').files[0];if(!file)return;try{if(file.size>5e6)throw Error('Choose a scenario smaller than 5 MB.');const data=JSON.parse(await file.text());const config=m.check(data.config||data);if(data.comparison)globalThis.MSETradeoffView?.loadState(data.comparison);if(data.workshop)globalThis.MSEWorkshop?.loadState(data.workshop);apply(config);toast('Saved scenario loaded.');}catch(e){toast('Could not load the scenario: '+e.message);}finally{$('scenario-file').value='';}});
 // Comparison views show common-rule outcomes, rather than just a selected path.

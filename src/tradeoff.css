@@ -10,7 +10,7 @@
 .radar-figure{position:relative;background:#fff;border:1px solid var(--line);border-radius:9px;padding:20px}
 #radar-chart{height:480px}
 #radar-legend{gap:10px 20px;line-height:1.5;margin:10px 0 0}
-.radar-key{display:inline-block;width:27px;height:0;border-top:3px solid;vertical-align:middle}
+.radar-key{display:inline-block;width:32px;height:0;border-top:4px solid;vertical-align:middle}
 .radar-key.key-1{border-top-style:dashed}.radar-key.key-2{border-top-style:dotted}
 #radar-context{margin:13px 0 20px;line-height:1.6}
 .comparison-targets{display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;margin:18px 0}

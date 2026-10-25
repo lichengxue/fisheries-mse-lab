@@ -71,12 +71,14 @@ function radar(profiles){
  T.AXES.forEach((a,i)=>{const p=point(i,100,r+gap),text=node('text',{x:p.x,y:Math.max(font+8,p.y-(labels[i].length-1)*(font+2)/2),'text-anchor':'middle','font-weight':600,fill:'#173541'});text.style.fontSize=font+'px';
   labels[i].forEach((line,j)=>text.append(node('tspan',{x:p.x,dy:j?font+2:0},line)));svg.append(text);
  });
- const dashes=['','8 4','2 4'];
+ const dashes=['','10 5','2 6'];
  profiles.forEach((p,j)=>{
   const points=T.AXES.map((a,i)=>point(i,p.scores[a.id])),color=V.colors[p.id];
-  svg.append(node('polygon',{points:points.map(p=>p.x+','+p.y).join(' '),fill:color,'fill-opacity':.045,stroke:color,'stroke-width':2.7,'stroke-dasharray':dashes[j]}));
+  const outline={points:points.map(p=>p.x+','+p.y).join(' '),fill:'none','stroke-linecap':'round','stroke-linejoin':'round','stroke-dasharray':dashes[j]};
+  svg.append(node('polygon',{...outline,stroke:'#fff','stroke-width':6}));
+  svg.append(node('polygon',{...outline,stroke:color,'stroke-width':3.3}));
   points.forEach((pt,i)=>{const axis=T.AXES[i],label=`${p.name}: ${axis.label}, score ${f(p.scores[axis.id],1)} of 100; original value ${rawText(axis.id,p.raw[axis.id])} ${axis.unit}`;
-   const mark=node(j===1?'rect':'circle',j===1?{x:pt.x-3.5,y:pt.y-3.5,width:7,height:7,fill:color}:{cx:pt.x,cy:pt.y,r:j===2?4.5:3.5,fill:color,...(j===2?{stroke:'#fff','stroke-width':1.3}:{})});
+   const mark=node(j===1?'rect':'circle',{...(j===1?{x:pt.x-4,y:pt.y-4,width:8,height:8}:{cx:pt.x,cy:pt.y,r:4.5}),fill:color,stroke:'#fff','stroke-width':1.5});
    mark.append(node('title',{},label));svg.append(mark);
   });
  });
@@ -122,7 +124,7 @@ document.querySelectorAll('[data-radar-target]').forEach(input=>input.addEventLi
 function exportCSV(){
  if(!api.result||api.dirty||api.busy||document.querySelector('#radar-scale [aria-invalid=true]'))return;const {econ,workshop}=economicData(),profiles=T.profiles(econ,state.ids,workshop.targets);
  const cols=['interface_version','model_version','MP','projection_years','futures','seed','chance_low_SSB_fraction','mean_catch_t_per_year','mean_profit_dollars_per_year','jobs_supported_job_years_per_year','mean_absolute_annual_catch_change_t',...T.AXES.map(a=>a.id+'_score_0_100'),'targets_json','economic_assumptions_json','model_configuration_json','comparison_json'];
- const rows=profiles.map(p=>['1.8.0',api.result.version,p.name,api.result.config.years,api.result.config.reps,api.result.config.seed,...T.AXES.map(a=>p.raw[a.id]),...T.AXES.map(a=>p.scores[a.id]),JSON.stringify(workshop.targets),JSON.stringify(workshop.assumptions),JSON.stringify(api.result.config),JSON.stringify(getState())]);
+ const rows=profiles.map(p=>['1.8.1',api.result.version,p.name,api.result.config.years,api.result.config.reps,api.result.config.seed,...T.AXES.map(a=>p.raw[a.id]),...T.AXES.map(a=>p.scores[a.id]),JSON.stringify(workshop.targets),JSON.stringify(workshop.assumptions),JSON.stringify(api.result.config),JSON.stringify(getState())]);
  V.saveFile([cols,...rows].map(row=>row.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\r\n'),'text/csv;charset=utf-8','fisheries-mse-mp-comparison.csv');
 }
 $('comparison-csv').addEventListener('click',exportCSV);
