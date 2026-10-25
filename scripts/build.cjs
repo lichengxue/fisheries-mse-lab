@@ -16,16 +16,22 @@ const clarityCSS = read('clarity.css');
 const visuals = read('visuals.js');
 const readabilityCSS = read('readability.css');
 const template = read('page.html');
+const assessmentUI = fs.existsSync(path.join(root,'src','assessment-ui.js')) ? read('assessment-ui.js') : '';
+const assessmentCSS = fs.existsSync(path.join(root,'src','assessment.css')) ? read('assessment.css') : '';
 // Keep the previous template buildable while interface files are updated.
 const required = ['/*__MODEL__*/', '/*__APP__*/'];
 if (template.includes('id="tab-stock"')) required.push('/*__UI__*/', '/*__UI_HELPERS__*/', '/*__UI_CSS__*/');
 if (template.includes('id="tab-people"')) required.push('/*__ECONOMICS__*/', '/*__WORKSHOP__*/', '/*__WORKSHOP_CSS__*/');
 if (template.includes('/*__CLARITY__*/')) required.push('/*__CLARITY__*/', '/*__CLARITY_CSS__*/');
 if (template.includes('/*__VISUALS__*/')) required.push('/*__VISUALS__*/', '/*__READABILITY_CSS__*/');
+if (template.includes('id="tab-assessment"')) {
+  required.push('/*__ASSESSMENT_UI__*/','/*__ASSESSMENT_CSS__*/');
+  if (!assessmentUI || !assessmentCSS) throw Error('Assessment interface files are required.');
+}
 for (const placeholder of required) {
   if (template.split(placeholder).length !== 2) throw Error('Expected one ' + placeholder);
 }
-const html = template.replace('/*__MODEL__*/', () => model).replace('/*__APP__*/', () => app).replace('/*__UI__*/', () => ui).replace('/*__UI_HELPERS__*/', () => uiHelpers).replace('/*__UI_CSS__*/', () => uiCSS).replace('/*__ECONOMICS__*/',()=>economics).replace('/*__WORKSHOP__*/',()=>workshop).replace('/*__WORKSHOP_CSS__*/',()=>workshopCSS).replace('/*__CLARITY__*/',()=>clarity).replace('/*__CLARITY_CSS__*/',()=>clarityCSS).replace('/*__VISUALS__*/',()=>visuals).replace('/*__READABILITY_CSS__*/',()=>readabilityCSS);
+const html = template.replace('/*__MODEL__*/', () => model).replace('/*__APP__*/', () => app).replace('/*__UI__*/', () => ui).replace('/*__UI_HELPERS__*/', () => uiHelpers).replace('/*__UI_CSS__*/', () => uiCSS).replace('/*__ECONOMICS__*/',()=>economics).replace('/*__WORKSHOP__*/',()=>workshop).replace('/*__WORKSHOP_CSS__*/',()=>workshopCSS).replace('/*__CLARITY__*/',()=>clarity).replace('/*__CLARITY_CSS__*/',()=>clarityCSS).replace('/*__VISUALS__*/',()=>visuals).replace('/*__READABILITY_CSS__*/',()=>readabilityCSS).replace('/*__ASSESSMENT_UI__*/',()=>assessmentUI).replace('/*__ASSESSMENT_CSS__*/',()=>assessmentCSS);
 fs.mkdirSync(path.join(root, 'dist'), {recursive: true});
 fs.writeFileSync(path.join(root, 'index.html'), html);
 fs.writeFileSync(path.join(root, 'dist', 'index.html'), html);
