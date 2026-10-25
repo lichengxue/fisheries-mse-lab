@@ -60,13 +60,13 @@ function renderTable(){
   return `<tr class="${r.id===selected?'selected':''}"><td><button type="button" class="policy-button" data-policy="${r.id}" aria-pressed="${r.id===selected}"><i class="swatch" style="background:${ruleColor[r.id]}"></i>${escape(r.name)}</button></td><td title="${v.crossings} of ${c.reps} futures. 95% Monte Carlo interval: ${interval}">${pct(v.risk,1)} <span class="mini risk-zero">(${v.crossings}/${c.reps})</span></td><td>${num(v.meanCatch,1)}</td><td>${num(v.change,1)}</td><td>${pct(v.terminal,1)}</td></tr>`;
  }).join('');
  $('comparison').querySelectorAll('[data-policy]').forEach(b=>b.addEventListener('click',()=>chooseRule(b.dataset.policy)));
- $('risk-footnote').textContent=`Low stock means breeding fish below ${pct(c.limit)} of the unfished level, at least once in ${c.years} years. A simulated risk of 0% does not prove the rule is risk-free.`;
+ $('risk-footnote').textContent=`Low stock means SSB below ${pct(c.limit)} of the unfished level, at least once in ${c.years} years. A simulated risk of 0% does not prove the rule is risk-free.`;
 }
 function renderTrace(){
  const c=result.config,r=current(),t=+$('year').value-1,path=r.path;
  $('year-value').textContent=t+1;$('next').disabled=t===c.years-1;
- const values=[['True breeding fish',path.ssb[t],'truth','t'],['Survey measurement',path.survey[t],'manager','t'],['Estimated breeding fish',path.estimate[t],'manager','t'],['Allowed catch',path.advice[t],'manager','t'],['F target',path.targetF[t],'manager','/ year'],['Actual F',path.F[t],'truth','/ year'],['Actual catch',path.catch[t],'truth','t'],['Next year’s breeding fish',path.ssb[t+1],'truth','t']];
- $('trace').innerHTML=values.map(([label,value,role,unit])=>`<div class="trace-item ${role} ${['F target','Actual F','Next year’s breeding fish'].includes(label)?'extra-trace':''}"><small>${label}</small><div class="trace-value">${value===null?(unit==='t'?'No survey':'Catch rule'):`${num(value,unit==='t'?1:3)} <span>${unit}</span>`}</div></div>`).join('');
+ const values=[['True SSB',path.ssb[t],'truth','t'],['Survey measurement',path.survey[t],'manager','t'],['Estimated SSB',path.estimate[t],'manager','t'],['Allowed catch',path.advice[t],'manager','t'],['F target',path.targetF[t],'manager','/ year'],['Actual F',path.F[t],'truth','/ year'],['Actual catch',path.catch[t],'truth','t'],['Next year’s SSB',path.ssb[t+1],'truth','t']];
+ $('trace').innerHTML=values.map(([label,value,role,unit])=>`<div class="trace-item ${role} ${['F target','Actual F','Next year’s SSB'].includes(label)?'extra-trace':''}"><small>${label}</small><div class="trace-value">${value===null?(unit==='t'?'No survey':'Catch rule'):`${num(value,unit==='t'?1:3)} <span>${unit}</span>`}</div></div>`).join('');
  const cap=path.capped?` Some quotas hit the fishing-capacity ceiling (${pct(r.metrics.capFraction,1)} of all trial-years).`:'';
  $('trace-detail').textContent=`${r.name}. One possible future, not the median. ${path.survey[t]===null?'No new survey this year. ':''}The operating model knows the true state; the decision procedure does not.${cap}`;
 }
@@ -110,25 +110,25 @@ function renderCharts(){
  hist.F.forEach((F,i)=>P.marks.append(svgNode('rect',{x:P.X(i+1)-hw/2,y:P.Y(F),width:hw,height:P.top+P.H-P.Y(F),fill:colors.blue})));
  hover(P,i=>{i=Math.max(1,Math.min(hist.years,i));return['Historical fishing year '+i,'Prescribed F: '+num(hist.F[i-1],3)+' / year','Catch: '+num(hist.catch[i-1],1)+' t','End SSB: '+pct(hist.ssb[i]/1000,1)+' unfished'];});
  const showObserved=$('show-history-observations')?.checked;const hmax=Math.max(100,...hist.ssb.map(v=>v/10),...(showObserved?hview.estimate.map(v=>v/10):[]),...(showObserved?hview.survey.filter(Number.isFinite).map(v=>v/10):[]));
- P=makePlot('history-ssb-chart',{xMax:hist.years,yMax:niceMax(hmax*1.05),xTitle:'Years before management',yTitle:'Breeding fish (% of unfished level)',title:'Past breeding fish, surveys and estimates',percent:true,integerX:true});
+ P=makePlot('history-ssb-chart',{xMax:hist.years,yMax:niceMax(hmax*1.05),xTitle:'Years before management',yTitle:'SSB (% of unfished level)',title:'Historical SSB, surveys and estimates',percent:true,integerX:true});
  line(P,hist.ssb.map((v,i)=>({x:i,y:v/10})),colors.teal,2.5);if(showObserved)line(P,hview.estimate.map((v,i)=>({x:i,y:v/10})),colors.blue,1.5);
  hview.survey.forEach((v,i)=>{if(showObserved&&v!==null)P.marks.append(svgNode('circle',{cx:P.X(i),cy:P.Y(v/10),r:2.6,fill:colors.orange}));});
  P.marks.append(svgNode('circle',{cx:P.X(hist.years),cy:P.Y(result.initial.SSB/10),r:4.5,fill:colors.teal}));
- hover(P,i=>{i=Math.max(0,Math.min(hist.years,i));return['Historical year '+i,'True breeding fish: '+num(hist.ssb[i],1)+' t',i===hist.years?'Projection starts here':'Next supplied F: '+num(hist.F[i],3)+' / year'];});
+ hover(P,i=>{i=Math.max(0,Math.min(hist.years,i));return['Historical year '+i,'True SSB: '+num(hist.ssb[i],1)+' t',i===hist.years?'Projection starts here':'Next supplied F: '+num(hist.F[i],3)+' / year'];});
  // Time series across replicate futures.
  const biomass=r.biomass.map(q=>({...q,lo:q.lo/10,mid:q.mid/10,hi:q.hi/10}));
- P=makePlot('biomass-chart',{xMax:c.years,yMax:niceMax(Math.max(100,c.limit*100,...biomass.map(q=>q.hi),...path.ssb.map(x=>x/10))*1.04),xTitle:'Years ahead',yTitle:'Breeding fish (% of unfished level)',title:'True spawning biomass, median and 10th to 90th percentile across futures',percent:true,integerX:true});
+ P=makePlot('biomass-chart',{xMax:c.years,yMax:niceMax(Math.max(100,c.limit*100,...biomass.map(q=>q.hi),...path.ssb.map(x=>x/10))*1.04),xTitle:'Years ahead',yTitle:'SSB (% of unfished level)',title:'True spawning biomass, median and 10th to 90th percentile across futures',percent:true,integerX:true});
  band(P,biomass,col);line(P,path.ssb.map((v,i)=>({x:i,y:v/10})),colors.muted,1.1,'4,3');line(P,biomass.map(q=>({x:q.x,y:q.mid})),col,2.5);reference(P,c.limit*100,'Limit '+pct(c.limit));cursor(P,t);
  hover(P,i=>{i=Math.max(0,Math.min(c.years,i));return['Year '+i,'Median: '+num(biomass[i].mid,1)+'% unfished','10th–90th: '+num(biomass[i].lo,1)+'–'+num(biomass[i].hi,1)+'%','One future: '+pct(path.ssb[i]/1000,1)];});
  const catches=r.catches.map(q=>({...q,x:q.x+1}));
  P=makePlot('catch-chart',{xMin:1,xMax:c.years,yMax:niceMax(Math.max(1,...catches.map(q=>q.hi),...path.catch)*1.05),xTitle:'Decision year',yTitle:'Actual catch (t)',title:'Realized catch, median and 10th to 90th percentile across futures',integerX:true});
  band(P,catches,col);line(P,path.catch.map((v,i)=>({x:i+1,y:v})),colors.muted,1.1,'4,3');line(P,catches.map(q=>({x:q.x,y:q.mid})),col,2.5);cursor(P,t+1);
  hover(P,i=>{i=Math.max(1,Math.min(c.years,i));const q=catches[i-1];return['Decision year '+i,'Median actual catch: '+num(q.mid,1)+' t','10th–90th: '+num(q.lo,1)+'–'+num(q.hi,1)+' t','One future: '+num(path.catch[i-1],1)+' t'];});
- P=makePlot('observation-chart',{xMin:1,xMax:c.years,yMax:niceMax(Math.max(...path.ssb.slice(0,-1),...path.estimate,...path.survey.filter(Number.isFinite))*1.06),xTitle:'Decision year',yTitle:'Breeding fish (tonnes)',title:'One future: true SSB, noisy survey index and estimated SSB',integerX:true});
+ P=makePlot('observation-chart',{xMin:1,xMax:c.years,yMax:niceMax(Math.max(...path.ssb.slice(0,-1),...path.estimate,...path.survey.filter(Number.isFinite))*1.06),xTitle:'Decision year',yTitle:'SSB (tonnes)',title:'One future: true SSB, noisy survey index and estimated SSB',integerX:true});
  line(P,path.ssb.slice(0,-1).map((v,i)=>({x:i+1,y:v})),colors.muted,1.5);
  line(P,path.estimate.map((v,i)=>({x:i+1,y:v})),col,2.2);
  path.survey.forEach((v,i)=>{if(v!==null)P.marks.append(svgNode('circle',{cx:P.X(i+1),cy:P.Y(v),r:2.6,fill:colors.orange}));});cursor(P,t+1);
- hover(P,i=>{i=Math.max(1,Math.min(c.years,i));return['Decision year '+i,'True breeding fish: '+num(path.ssb[i-1],1)+' t','Survey: '+(path.survey[i-1]===null?'not scheduled':num(path.survey[i-1],1)+' t'),'Estimate: '+num(path.estimate[i-1],1)+' t'];});
+ hover(P,i=>{i=Math.max(1,Math.min(c.years,i));return['Decision year '+i,'True SSB: '+num(path.ssb[i-1],1)+' t','Survey: '+(path.survey[i-1]===null?'not scheduled':num(path.survey[i-1],1)+' t'),'Estimate: '+num(path.estimate[i-1],1)+' t'];});
  // Age structure is the actual state in the selected illustrative future.
  const N=path.N[t],total=m.sum(N),proportion=N.map(x=>total>0?100*x/total:0);
  P=makePlot('age-chart',{xMin:.5,xMax:stock.A+.5,yMax:niceMax(Math.max(1,...proportion)*1.08),xTitle:'Age (years)',yTitle:'Share of fish (%)',title:'True age composition at the beginning of the selected decision year',percent:true,integerX:true});
@@ -151,7 +151,7 @@ function renderCharts(){
  const previous=t>0?path.advice[t-1]:result.history.catch[result.history.years-1],d=path.estimate[t]/1000,xmax=Math.max(120,Math.ceil(d*110/10)*10);
  const isF=selected==='fmsy'||selected==='framp',ruleValue=S=>isF?m.targetF(selected,S,c,managerRef):m.advice(selected,S,c,previous),point=isF?path.targetF[t]:path.advice[t];
  const curve=Array.from({length:241},(_,i)=>{const x=xmax*i/240;return{x,y:ruleValue(x/100*1000)};});
- P=makePlot('hcr-chart',{xMax:xmax,yMax:niceMax(Math.max(isF?managerRef.Fmsy:1,point,...curve.map(q=>q.y))*1.15),xTitle:'Estimated Breeding fish (% of unfished level)',yTitle:isF?'F target / year':'Catch advice (t)',title:r.name+(isF?' F-target curve':' catch-advice curve, conditional on previous advice'),xPercent:true});
+ P=makePlot('hcr-chart',{xMax:xmax,yMax:niceMax(Math.max(isF?managerRef.Fmsy:1,point,...curve.map(q=>q.y))*1.15),xTitle:'Estimated SSB (% unfished)',yTitle:isF?'F target / year':'Catch advice (t)',title:r.name+(isF?' F-target curve':' catch-advice curve, conditional on previous advice'),xPercent:true});
  if(['ramp','smooth','framp'].includes(selected))for(const [x,label]of [[c.limit*100,'Limit'],[c.trigger*100,'Trigger']]){P.marks.append(svgNode('line',{x1:P.X(x),y1:P.top,x2:P.X(x),y2:P.top+P.H,stroke:'#a3b6be','stroke-width':1,'stroke-dasharray':'3,3'}));P.svg.append(svgNode('text',{x:P.X(x)+5,y:P.top+13},label));}
  if(isF)reference(P,managerRef.Fmsy,'Management FMSY');
  line(P,curve,col,2.5);P.marks.append(svgNode('circle',{cx:P.X(d*100),cy:P.Y(point),r:5,fill:colors.orange,stroke:'#fff','stroke-width':1.5}));
@@ -163,13 +163,13 @@ function renderCharts(){
  const sxmax=Math.max(150,Math.ceil(Math.max(...path.ssb.slice(0,-1),...hist.ssb)/10*1.05/25)*25);
  const sr=Array.from({length:241},(_,i)=>{const x=sxmax*i/240,mid=100*m.recruitment(x/100*1000,stock,c.steepness,c.srType)/stock.R0;return{x,mid,lo:mid*m.multiplier(c.recruitCV,-1.281551565545),hi:mid*m.multiplier(c.recruitCV,1.281551565545)};});
  const observedR=path.recruits.map(v=>100*v/stock.R0),historicalR=hist.recruits.map(v=>100*v/stock.R0);
- P=makePlot('recruitment-chart',{xMax:sxmax,yMax:niceMax(Math.max(100,...sr.map(q=>q.hi),...observedR,...historicalR)*1.06),xTitle:'Breeding fish (% unfished)',yTitle:'Young fish (% of unfished level)',title:'Beverton–Holt recruitment curve, historical mean recruits and stochastic projection recruits',percent:true,xPercent:true});
+ P=makePlot('recruitment-chart',{xMax:sxmax,yMax:niceMax(Math.max(100,...sr.map(q=>q.hi),...observedR,...historicalR)*1.06),xTitle:'SSB (% unfished)',yTitle:'Young fish (% of unfished level)',title:'Beverton–Holt recruitment curve, historical mean recruits and stochastic projection recruits',percent:true,xPercent:true});
  band(P,sr,colors.teal);line(P,sr.map(q=>({x:q.x,y:q.mid})),colors.teal,2.5);
  hist.recruits.forEach((v,i)=>P.marks.append(svgNode('circle',{cx:P.X(hist.ssb[i]/10),cy:P.Y(historicalR[i]),r:3,fill:colors.blue,opacity:.65})));
  path.recruits.forEach((v,i)=>P.marks.append(svgNode('circle',{cx:P.X(path.ssb[i]/10),cy:P.Y(observedR[i]),r:i===t?5:2.5,fill:i===t?colors.orange:colors.muted,opacity:i===t?1:.35})));
  P.marks.append(svgNode('circle',{cx:P.X(100),cy:P.Y(100),r:4,fill:'#fff',stroke:colors.teal,'stroke-width':2}));
  $('recruitment-caption').textContent=`Beverton–Holt governs this population. Historical recruits (blue) follow the mean relationship. Projection recruits vary around it with CV = ${pct(c.recruitCV)}. h = ${num(c.steepness,2)} means ${pct(c.steepness)} of R0 at 20% unfished SSB. The orange point enters age 1 after projection decision year ${t+1}.`;
- hover(P,x=>{const R=m.recruitment(x/100*1000,stock,c.steepness,c.srType);return['True breeding fish: '+num(x,1)+'% unfished','Expected young fish: '+pct(R/stock.R0,1)+' of R0',num(R,0)+' age-1 fish next year'];},false);
+ hover(P,x=>{const R=m.recruitment(x/100*1000,stock,c.steepness,c.srType);return['True SSB: '+num(x,1)+'% unfished','Expected young fish: '+pct(R/stock.R0,1)+' of R0',num(R,0)+' age-1 fish next year'];},false);
  // Keep line and band legends consistent with the chosen strategy.
  document.querySelectorAll('.legend .sample[data-policy-color]').forEach(x=>x.style.background=col);
 }
