@@ -1,5 +1,5 @@
 FISHERIES MSE CLASSROOM LAB
-Interface 1.9.0 / scientific model 1.5.0
+Interface 1.10.0 / scientific model 1.5.0
 
 OPEN AND EXPLORE
 Open index.html directly in a modern browser, or use the public classroom site.
@@ -26,9 +26,10 @@ SEVEN STEPS
 5. COMPARE: start with the radar or choose two goals for a trade-off plot.
    Extra panels contain trajectories, tables, risk intervals and a pinned-run
    comparison. A pin lasts for the page session; change one assumption at a time.
-6. ONE FUTURE: Previous/Next, a year number and Play feedback follow the cycle.
-   True SSB, the relative survey index, age sample, estimated SSB, catch advice
-   and realized catch are distinct. This is the first replicate, not the median.
+6. HISTORY & FEEDBACK: choose MPs, then play their population and catch paths
+   together from the shared history through all feedback years. Zero marks the
+   handoff. Choose actual catch or annual advice. These are matched first
+   replicates, not ensemble medians; expand Inspect one MP for ensemble bands.
 7. PEOPLE & MONEY: change prices, fishing costs or fleet catch shares. Then use
    Stakeholder discussion to set group objectives, shared limits and votes.
    See ECONOMICS_AND_WORKSHOP.txt for the accounting and discussion exercise.
@@ -75,7 +76,7 @@ cross-age covariance and treats catch-derived F as fixed. It excludes uncertaint
 in q, biology and model structure and can be too narrow under misspecification.
 It is not a coverage guarantee and does not show the distribution across futures.
 
-One future / Compare: pointwise 10th–90th percentiles ACROSS simulated futures.
+Single-MP detail / Compare: pointwise 10th–90th percentiles ACROSS simulated futures.
 The median is the middle outcome, not the mean or an assessment confidence band.
 
 A 20-MINUTE DATA-TO-DECISION EXERCISE
@@ -152,7 +153,7 @@ SOURCE AND VALIDATION
 src/model.js: biology, observations, sequential fitting, rules and reference points.
 src/assessment-ui.js: survey/assessment plots, controls and joint data export.
 src/app.js: web worker, main plots and other CSVs.
-Build: npm run build. Verify: npm test (48 checks). No third-party packages.
+Build: npm run build. Verify: npm test (54 checks). No third-party packages.
 The GitHub Pages workflow tests and deploys dist/. index.html is the same
 standalone offline lab. The model assumptions are also available in the GUI.
 
@@ -190,34 +191,46 @@ raw values with units, all five scores, targets, economics and model settings.
 Save/Load scenario also retains comparison choices. Browser preferences remember
 the selected view, MPs and axes; they do not alter the model's random draws.
 
-ASSESSMENT INTERVAL AND FEEDBACK EXERCISE
-1. On Assessment, find Assessment interval. Default: every year. The same
-   setting appears in One future; it can be changed from either screen.
-2. Open One future and choose Try a 3-year cycle. Assessments are in years
-   1, 4, 7, ... . Keep the survey annual to see data collected during a gap.
-3. Press Play feedback. Survey, Assessment, Catch advice and Population
-   highlight in order. Pause, change speed, or choose a year in the strip.
-4. At year 1, record the annual advice. Watch it stay the same in years 2
-   and 3 while SSB, actual catch and the model prediction change.
-5. At year 4, watch the assessment use surveys from years 2, 3 and 4.
-   It sets a new ANNUAL catch, held through year 6.
-6. Compare annual, 3-year and 5-year assessment intervals with the same
-   random seed. Discuss the risk of reacting later to a declining stock.
-7. In See this year's numbers, Download this future exports the timing,
-   advice, catch, SSB, recruitment and survey years used.
+SHARED HISTORY AND MP FEEDBACK EXERCISE
+1. In Fish stock, choose a life history and historical F series. This series
+   directly drives the shared historical population and catch.
+2. Open History & feedback. The gray lines show the complete historical
+   record. Time 0 is the handoff to feedback; positive years are feedback.
+3. Open Choose MPs to follow. Start with FMSY + limit, Catch B and Steady
+   catch, or choose any subset of the eight candidates. Uncheck an MP to hide
+   it. Selection changes neither its model output nor the random conditions.
+4. Press Play from history. The cursor follows the historical record, then
+   all chosen MPs progress together through surveys, assessments, advice
+   and population change. Use Play timeline to pause and continue.
+5. Choose Try a 3-year cycle. Assessments occur in feedback years 1, 4,
+   7, ... . Each MP has its own estimate and annual catch advice. Advice
+   holds in years 1-3, renews in year 4, and holds again in years 4-6.
+6. Use the Catch plot selector to compare catch taken with annual advice.
+   Advice can be drawn ahead through its known period. Future population
+   and actual catch are revealed only as their years finish.
+7. Use Start of feedback, Show full run, the slider or the signed timeline
+   year field. Negative values locate history; 0 starts feedback. A full
+   run includes the final population state after the last feedback year.
+8. Compare the terminal SSB and catch paths. Which rule rebuilds fastest?
+   Does the rule with more stable advice give more stable actual catch?
+   Repeat with a longer assessment interval and discuss delayed reactions.
+9. Download selected MP trajectories. The CSV contains one shared history
+   and every feedback year for each selected MP, with original units,
+   annual advice, catch, starting/ending SSB, F and assessment timing.
+10. Save scenario retains MP choices, catch-plot type, speed, time and step.
+    Inspect one MP in more detail retains the original numerical trace,
+    true age structure, F and ensemble median/10th-90th percentile plots.
 
-The interval affects future assessments only. Historical observations still
-condition the initial assessment annually. Stored surveys are processed in
-year order at the next assessment, using past reported catch. No true fish
-numbers or future data enter the fit. This is a sequential update, not a
-full-history statistical refit. Between assessments, the age model predicts
-without new data; index shortcuts hold their last estimate.
+Every MP has its own diverging population and observations; random noise
+conditions are matched for fair comparison. Within a run, survey, assessment
+and implementation settings are shared and the fishing rules differ. This
+view does not assign a different survey or assessment design to each MP.
+It displays one matched first replicate per MP, not an ensemble average or
+an uncertainty interval. The Compare tab retains ensemble trade-off metrics.
 
-All rules, including F-based rules, hold annual catch advice through the
-period. An F target is converted to annual tonnage at the assessment; actual
-F can change each year. The smoothed rule's change cap applies at renewals.
-No emergency closure is applied between assessments. The catch taken can
-still differ because of implementation noise or the capacity ceiling.
-Fish icons are decorative; numeric SSB and its bar represent mature biomass.
-Reduced-motion settings remove swimming/pulse effects while preserving steps.
-Playback shows the selected first replicate, rather than the ensemble median.
+Assessment intervals affect future assessments only. Historical observations
+still condition the initial assessment annually. Stored surveys are processed
+in year order at the next assessment using past reported catch, never true
+fish numbers or future observations. All rules, including F-based rules, hold
+annual tonnage advice. Realized F/catch can vary yearly. The smoothing cap
+applies at renewals, and no emergency closure occurs between assessments.
