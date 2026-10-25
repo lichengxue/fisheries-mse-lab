@@ -14,10 +14,10 @@ Choose a fish, try fishing rules, and see what could happen. This browser lab in
 
 1. **Fish stock:** choose short-, medium- or long-lived fish and a fishing history. Drag a bar to change fishing pressure.
 2. **Survey:** choose an abundance index, age samples, or both. Change index noise and the number of fish aged.
-3. **Assessment:** fit an age-structured model, inspect estimated SSB and its approximate range, and compare fitted data. Try leaving ages out of the fit.
+3. **Assessment:** choose the assessment interval (default: every year), fit an age-structured model, and inspect estimated SSB. Try leaving ages out of the fit.
 4. **Fishing rules:** choose a rule and adjust its settings. The page shows the controls relevant to that rule.
 5. **Compare:** use a radar to compare up to three MPs across five goals, or choose two goals for a trade-off plot. See the original values and change the shared class targets when needed.
-6. **One future:** press **Play years** to follow a possible outcome.
+6. **One future:** press **Play feedback** to watch surveys, assessments, catch advice and population change. **Try a 3-year cycle** shows advice held in years 1–3, then renewed in year 4.
 7. **People & money:** explore income, jobs and different groups' priorities.
 
 **Text size:** the default labels and plot text are larger. Choose **Text size → Larger** at the top for extra-large text; the browser remembers your choice. Fish, boat, catch, income and group symbols appear beside their text labels.
@@ -26,13 +26,21 @@ The question at the top of each page is the starting point. Extra settings, tabl
 
 **Save / Load scenario** keeps your settings and discussion rounds. Plot buttons enlarge or download a figure. CSVs and workshop reports are inside the relevant expandable panels.
 
-The **Assessment** step shows estimated SSB and optional observed-versus-fitted plots. Extra assumptions and fitting details start closed.
+The **Assessment** step shows estimated SSB and optional observed-versus-fitted plots. Extra assumptions and fitting details start closed. The assessment interval is separate from the survey interval.
 
 ![Age-structured assessment and its approximate uncertainty range](assets/assessment-survey.png)
 
 The **Compare** screen shows the trade-offs among management procedures (MPs). Radar axes point outward for better performance on a shared 0–100 scale; changing the selected MPs does not change that scale. The two-goal view keeps catch, profit, jobs, risk and catch change in their original units. Polygon area does not choose a winner.
 
 ![MP trade-offs across five goals](assets/mp-tradeoffs.png)
+
+## Watch the feedback cycle
+
+Choose **One future → Assessment interval**, or set the same control on **Assessment**. Assessments begin in year 1 and repeat every 1–10 years. The default is annual assessment; older saved scenarios keep this behavior.
+
+**Play feedback** highlights each step. At an assessment, stored survey data update the estimate and the rule sets annual catch advice for the coming period. Between assessments, the population and its prediction change each year while advice stays fixed. Actual catch can differ from advice. Pause, change playback speed, or click a year in the period strip. Open **See this year's numbers** to download the full future.
+
+![Assessment, catch advice and population feedback](assets/feedback-cycle.png)
 
 ## People and money
 
@@ -57,7 +65,7 @@ Future choices include three fixed catches, a fixed share of estimated SSB, stoc
 
 The assessment is a simplified sequential fit, not a whole-history stock assessment. Its approximate 80% SSB range is conditional on assumed biology and q; it omits several sources of uncertainty. The model never receives true abundance or true F. [Full assessment equations and limitations](docs/MODEL.md).
 
-FMSY, MSY and SSB reference points are calculated from the assumed biology. Stock and catch plots include median and 10th–90th percentile outcomes. Optional tables expose risk, catch variation, reference points, economic uncertainty and objective scores. The 42 checks cover population dynamics, historical forcing, estimation, management rules, reproducibility, accounting, scoring and shared limits.
+FMSY, MSY and SSB reference points are calculated from the assumed biology. Stock and catch plots include median and 10th–90th percentile outcomes. Optional tables expose risk, catch variation, reference points, economic uncertainty and objective scores. The 48 checks cover population dynamics, historical forcing, estimation, management rules, reproducibility, accounting, scoring and shared limits.
 
 </details>
 
@@ -78,6 +86,7 @@ Open `http://127.0.0.1:8000`. Set `PORT` to choose another port. Rebuild after e
 | --- | --- |
 | `src/model.js` | Age-based population, history, surveys, estimation and fishing rules |
 | `src/tradeoffs.js`, `src/tradeoff-ui.js`, `src/tradeoff.css` | Shared objective scales, radar and selectable two-goal MP comparisons |
+| `src/feedback.js`, `src/feedback.css` | Staged assessment/advice/population playback and one-future export |
 | `src/assessment-ui.js`, `src/assessment.css` | Separate survey and assessment screens, data-fit plots and joint data export |
 | `src/app.js` | Simulation worker, base plots and exports |
 | `src/ui.js`, `src/ui.css` | Guided navigation and interactive controls |
@@ -87,7 +96,7 @@ Open `http://127.0.0.1:8000`. Set `PORT` to choose another port. Rebuild after e
 | `src/workshop.js`, `src/workshop.css` | Income, jobs and classroom discussion |
 | `src/ui-helpers.js` | Fishing-history builder and CSV parsing |
 | `src/page.html` | Page template and detailed explanations |
-| `tests/` | 42 model and consistency checks |
+| `tests/` | 48 model and consistency checks |
 | `scripts/build.cjs` | Packs the offline page and Pages artifact |
 
 </details>
