@@ -12,6 +12,10 @@ document.querySelectorAll('[data-next-survey]').forEach(el=>el.addEventListener(
  const r=api.result;if(!r)return;const path=r.rules.find(v=>v.id===api.selected).path,current=+$('year').value-1;
  const order=Array.from({length:r.config.years},(_,i)=>(current+i+1)%r.config.years),next=order.find(i=>path.surveyVisits[i]);if(next!==undefined)setYear(next+1);
 }));
+document.querySelectorAll('[data-next-assessment]').forEach(el=>el.addEventListener('click',()=>{
+ const r=api.result;if(!r)return;const path=r.rules.find(v=>v.id===api.selected).path,current=+$('year').value-1;
+ const order=Array.from({length:r.config.years},(_,i)=>(current+i+1)%r.config.years),next=order.find(i=>path.assessment[i].assessmentDue);if(next!==undefined)setYear(next+1);
+}));
 function controls(){
  const mode=$('surveyData').value,full=$('estimator').value==='assessment',A=m.PRESETS[$('species').value].A;
  $('surveyMinAge').max=A;if(+$('surveyMinAge').value>A)$('surveyMinAge').value=A;
@@ -52,27 +56,28 @@ function render(){
  $('survey-demo').closest('details').hidden=c.surveyData==='ages';
  const channels=[path.survey[t]!==null?'an abundance index':null,counts?`${m.sum(counts)} sampled ages`:null].filter(Boolean);
  $('survey-data-note').textContent=`Year ${t+1} · ${path.surveyVisits[t]?'This visit provides '+channels.join(' and ')+'.':'No survey visit this year.'} Both products come from the same survey schedule. Fish ages are sampled by number.`;
- $('assessment-cards').innerHTML=`<div><small>Estimated SSB · year ${t+1}</small><strong>${n(a.ssb)} t</strong></div><div><small>${full?'Approximate 80% range':'Assessment type'}</small><strong>${full?n(a.lo)+'–'+n(a.hi)+' t':'Index shortcut'}</strong></div>`;
+ $('assessment-schedule-note').textContent=`Assess every ${c.assessmentEvery===1?'year':c.assessmentEvery+' years'}, starting in year 1. Annual advice stays fixed until the next assessment. Surveys follow their own schedule.`;
+ $('assessment-cards').innerHTML=`<div><small>${a.assessmentDue?'Assessment estimate':'Stock prediction'} · year ${t+1}</small><strong>${n(a.ssb)} t</strong></div><div><small>${full?'Approximate 80% range':'Assessment type'}</small><strong>${full?n(a.lo)+'–'+n(a.hi)+' t':'Index shortcut'}</strong></div>`;
  const previous=t===0?r.history.catch.at(-1):path.catch[t-1];
- const used=full?(channels.length?channels.filter(v=>!v.includes('ages')||c.useAgeData).join(' and ')||'no new data':'no new data'):'the available index';
- $('assessment-data-note').textContent=`Year ${t+1} · ${full?(channels.length?used:'prediction only'):'index shortcut'} · previous catch ${n(previous)} t.${counts&&full&&!c.useAgeData?' Collected ages are left out.':''}${a.catchShortfall?' The predicted population could not fully explain the previous reported catch.':''}`;
+ const dataYears=a.dataYearsUsed||[];
+ $('assessment-data-note').textContent=`Year ${t+1} · ${a.assessmentDue?'Assessment year. '+(dataYears.length?'Uses stored survey data from year'+(dataYears.length===1?' ':'s ')+dataYears.join(', ')+'.':'No new survey data; uses the model prediction.'):'No assessment. '+(full?'The stock estimate is a prediction.':'The index shortcut holds its last estimate.')+' Surveys are stored for year '+a.nextAssessmentYear+'.'} Previous catch: ${n(previous)} t.${counts&&full&&!c.useAgeData?' Collected ages are left out.':''}${a.catchShortfall?' The predicted population could not fully explain the previous reported catch.':''}`;
  $('assessment-band-key').hidden=!full;
- $('assessment-ssb-caption').textContent=full?'Gray shows the simulated true SSB. The colored line is the estimate used by the fishing rule. Shading is an approximate 80% assessment range under the model assumptions; it does not cover every source of error.':'This shortcut converts the index to SSB using a fixed unfished age pattern and assumed q. Even a noise-free index can give the wrong SSB when age structure changes. No uncertainty range is calculated.';
+ $('assessment-ssb-caption').textContent=full?'Gray shows true SSB. Colored dots mark assessments; between them, the line is a model prediction. Shading is an approximate 80% range under the model assumptions; it does not cover every source of error.':'This shortcut converts the index to SSB using a fixed unfished age pattern and assumed q. Even a noise-free index can give the wrong SSB when age structure changes. No uncertainty range is calculated.';
  $('survey-age-caption').textContent=counts?`Year ${t+1}: ${m.sum(counts)} fish aged. Smaller samples give more variable proportions. These ages describe survey-caught fish, which can differ from the whole population.`:'Age samples have their own sampling noise, separate from index noise.';
- $('age-fit-caption').textContent=counts?`Year ${t+1}. ${full&&c.useAgeData?'These observed counts informed the assessment.':'These ages were not used in the estimate.'} Blue bars are the model’s proportions among survey-selected fish.`:'There is no observed age composition to fit in this year.';
- $('assessment-fit-note').textContent=full&&a.objectiveBefore!==undefined?`The fitting score changed from ${n(a.objectiveBefore,2)} to ${n(a.objectiveAfter,2)} (lower fits the data and prediction penalties better). ${a.iterations} fitting steps. ${a.iterations===0?'The model carried its prediction forward.':'Each annual fit adjusts numbers at age; this is not a refit of the entire time series.'}`:'Index shortcuts do not fit an age-structured model.';
+ $('age-fit-caption').textContent=counts?`Year ${t+1}. ${!a.assessmentDue?'These ages are stored for the next assessment. Bars compare the sample with the current model prediction.':full&&c.useAgeData?'These observed counts informed the assessment.':'These ages were not used in the estimate.'} Blue bars are the model’s proportions among survey-selected fish.`:'There is no observed age composition to fit in this year.';
+ $('assessment-fit-note').textContent=!a.assessmentDue?'No fit this year. These plots compare collected data with the current prediction. Stored data are processed at the next assessment.':full&&a.objectiveBefore!==undefined?`At this assessment, stored data are processed in year order. In its last annual step, the fitting score changed from ${n(a.objectiveBefore,2)} to ${n(a.objectiveAfter,2)} (lower fits the data and prediction penalties better). ${a.iterations} fitting steps. ${a.iterations===0?'The model carried its prediction forward.':'Each annual fit adjusts numbers at age; this is not a refit of the entire time series.'}`:'Index shortcuts do not fit an age-structured model.';
  drawIndex('survey-index-chart',path,c,false,t);drawIndex('index-fit-chart',path,c,true,t);
  drawAges('survey-age-chart',counts,a,c,r.stock,t,false);drawAges('age-fit-chart',counts,a,c,r.stock,t,true);
  $('assessment-csv').disabled=api.dirty||api.busy;
 }
 function exportData(){
  const r=api.result;if(!r||api.dirty||api.busy)return;const path=r.rules.find(v=>v.id===api.selected).path;
- const headers=['model_version','phase','year','strategy','age','survey_visit','observed_index_relative_units','age_count','age_sample_size','fitted_index_relative_units','fitted_age_proportion','estimated_numbers_at_age','estimated_SSB_t','approximate_80_low_t','approximate_80_high_t','true_SSB_t_teaching_only','reported_catch_previous_year_t','assessment_previous_F_per_year','catch_capacity_mismatch','fit_objective_before','fit_objective_after','configuration_json'];
+ const headers=['model_version','phase','year','strategy','age','survey_visit','observed_index_relative_units','age_count','age_sample_size','fitted_index_relative_units','fitted_age_proportion','estimated_numbers_at_age','estimated_SSB_t','approximate_80_low_t','approximate_80_high_t','true_SSB_t_teaching_only','reported_catch_previous_year_t','assessment_previous_F_per_year','catch_capacity_mismatch','fit_objective_before','fit_objective_after','assessment_due','assessment_year','advice_through_year','annual_catch_advice_t','survey_years_processed','configuration_json'];
  const rows=[];
  for(const phase of ['history','future']){
   const h=phase==='history',fits=h?r.historicalView.assessment:path.assessment,surveys=h?r.historicalView.survey:path.survey,ages=h?r.historicalView.ageComp:path.ageComp,truth=h?r.history.ssb:path.ssb;
   fits.forEach((fit,t)=>fit.N.forEach((N,a)=>{const priorCatch=t===0?(h?null:r.history.catch.at(-1)):(h?r.history.catch[t-1]:path.catch[t-1]);
-   rows.push([r.version,phase,t+1,h?'historical forcing':api.selected,a+1,fit.visited,surveys[t],ages[t]?.[a],fit.sampleSize,fit.fittedIndex,fit.fittedAge[a],N,fit.ssb,fit.lo,fit.hi,truth[t],priorCatch,fit.previousF,fit.catchShortfall,fit.objectiveBefore,fit.objectiveAfter,JSON.stringify(r.config)]);
+   rows.push([r.version,phase,t+1,h?'historical forcing':api.selected,a+1,fit.visited,surveys[t],ages[t]?.[a],fit.sampleSize,fit.fittedIndex,fit.fittedAge[a],N,fit.ssb,fit.lo,fit.hi,truth[t],priorCatch,fit.previousF,fit.catchShortfall,fit.objectiveBefore,fit.objectiveAfter,h?true:fit.assessmentDue,h?t+1:fit.assessmentYear,h?'':fit.adviceThroughYear,h?'':path.advice[t],JSON.stringify(h?(fit.visited?[t+1]:[]):fit.dataYearsUsed),JSON.stringify(r.config)]);
   }));
  }
  const csv=[headers,...rows].map(row=>row.map(v=>v===undefined||v===null?'':'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\r\n');V.saveFile(csv,'text/csv;charset=utf-8',`mse-assessment-${api.selected}-seed-${r.config.seed}.csv`);

@@ -124,7 +124,7 @@ document.querySelectorAll('[data-radar-target]').forEach(input=>input.addEventLi
 function exportCSV(){
  if(!api.result||api.dirty||api.busy||document.querySelector('#radar-scale [aria-invalid=true]'))return;const {econ,workshop}=economicData(),profiles=T.profiles(econ,state.ids,workshop.targets);
  const cols=['interface_version','model_version','MP','projection_years','futures','seed','chance_low_SSB_fraction','mean_catch_t_per_year','mean_profit_dollars_per_year','jobs_supported_job_years_per_year','mean_absolute_annual_catch_change_t',...T.AXES.map(a=>a.id+'_score_0_100'),'targets_json','economic_assumptions_json','model_configuration_json','comparison_json'];
- const rows=profiles.map(p=>['1.8.1',api.result.version,p.name,api.result.config.years,api.result.config.reps,api.result.config.seed,...T.AXES.map(a=>p.raw[a.id]),...T.AXES.map(a=>p.scores[a.id]),JSON.stringify(workshop.targets),JSON.stringify(workshop.assumptions),JSON.stringify(api.result.config),JSON.stringify(getState())]);
+ const rows=profiles.map(p=>['1.9.0',api.result.version,p.name,api.result.config.years,api.result.config.reps,api.result.config.seed,...T.AXES.map(a=>p.raw[a.id]),...T.AXES.map(a=>p.scores[a.id]),JSON.stringify(workshop.targets),JSON.stringify(workshop.assumptions),JSON.stringify(api.result.config),JSON.stringify(getState())]);
  V.saveFile([cols,...rows].map(row=>row.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\r\n'),'text/csv;charset=utf-8','fisheries-mse-mp-comparison.csv');
 }
 $('comparison-csv').addEventListener('click',exportCSV);

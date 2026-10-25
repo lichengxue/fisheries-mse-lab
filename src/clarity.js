@@ -16,7 +16,7 @@ intro('stock','How does fishing change a fish stock?','Choose a fish and a fishi
 intro('data','What does the survey tell us?','One visit can give an abundance index, a sample of fish ages, or both.');
 intro('rules','How should fishing respond?','Choose a rule above. Adjust its settings and see how it responds when the stock changes.');
 intro('results','What are the trade-offs among MPs?','An MP (management procedure) combines the survey, assessment and fishing rule. Compare the trade-offs across goals; there may be no single best choice.');
-intro('future','What happens year by year?','Press Play years to follow one possible future: survey, estimate, decide and catch.');
+intro('future','What happens year by year?','Press Play feedback to watch assessments renew catch advice, then follow the fish until the next assessment.');
 intro('people','Who benefits, and what matters?','Explore income and jobs. Then discuss the trade-offs with different groups.');
 text('[data-control-panel=stock] .control-heading','Choose your fish');
 text('[data-control-panel=data] .control-heading','Measure the stock');
@@ -29,7 +29,7 @@ for(const id of ['life-profile','estimator-note'])$(id).hidden=false;
 field('historyPreset','Fishing history');field('surveyCV','Index noise (%)');field('surveyBias','Survey over- or under-estimate (%)');field('surveyEvery','How often do we survey?');field('estimator','Assessment method');
 field('steepness','How strongly young fish can replenish the stock (h)');field('recruitCV','Year-to-year variation in young fish (%)');
 field('Fmultiplier','Fishing target (× FMSY)');field('harvest','Share of estimated SSB to catch (%)');
-field('limit','Stop fishing below this stock level (%)');field('trigger','Allow full fishing above this stock level (%)');field('smoothCap','Maximum yearly catch change (%)');field('implementationCV','Variation in following catch advice (%)');
+field('limit','Stop fishing below this stock level (%)');field('trigger','Allow full fishing above this stock level (%)');field('smoothCap','Maximum change at an assessment (%)');field('implementationCV','Variation in following catch advice (%)');
 field('years','Years to look ahead');field('reps','Number of possible futures');field('seed','Repeatable random seed');
 field('Mfactor','Assumed natural death rate (× true rate)');field('assessmentProcessCV','Allow departures from predicted ages (%)');
 fold([$('steepness').closest('label'),$('recruitCV').closest('label')],'More about young fish');
@@ -58,7 +58,7 @@ text('[data-control-panel=rules] details:has(#limit)>summary','More fishing-rule
 const ruleHelp=document.createElement('p');ruleHelp.id='plain-rule-help';ruleHelp.className='lesson-help';$('hcr-chart').closest('figure').before(ruleHelp);
 fold([$('reference-values'),$('reference-note'),$('yield-chart').closest('figure')],'What do FMSY and MSY mean?','reference-explainer');
 const referenceIntro=document.createElement('p');referenceIntro.className='lesson-help';referenceIntro.textContent='FMSY is the model’s fishing-rate target for the largest long-term catch. MSY is that catch in tonnes. These targets do not guarantee a safe outcome.';$('reference-values').before(referenceIntro);
-caption('hcr-chart','The line shows the rule. The dot shows one year’s estimate and fishing decision.');
+caption('hcr-chart','The line shows the rule. The dot shows the assessment that set this period’s advice. Advice stays fixed until the next assessment.');
 fold([one('#view-results .results:has(#strategy-toggles)')],'How do the rules compare over time?');
 fold([$('comparison').closest('section')],'See the numbers for every rule');
 fold([one('#view-results .result-actions')],'Download results or save a comparison');
@@ -71,7 +71,7 @@ $('biomass-chart').closest('figure').querySelector('h3').textContent='How SSB ch
 caption('biomass-chart','The colored line is the middle outcome. The shaded band contains 8 in 10 simulated outcomes. The thin line follows one future.');
 caption('catch-chart','Catch is what is actually taken, which can differ from the advice. The shaded band contains 8 in 10 simulated outcomes.');
 all('#view-future .legend').forEach(legend=>legend.hidden=true);
-text('#trace-title','One year in the fishery');text('#view-future .trace-head .subtle','The manager sees surveys and catch reports. You can also see the true stock.');
+text('#trace-title','Watch the feedback cycle');text('#view-future .trace-head .subtle','The manager sees surveys and catch reports. You can also see the true stock.');
 all('[data-control-panel=future] .neutral-note').forEach(el=>el.hidden=true);
 const econ=$('economic-settings');text('#economic-settings>p','Try changing price, costs or the share of catch going to small vessels.');
 text('#workshop-settings>p','Choose a group card, then set what matters to that group.');
@@ -105,7 +105,7 @@ all('details').forEach(d=>d.addEventListener('toggle',()=>{if(d.open)requestAnim
 function update(){
  const selected=api.selected,c=api.result?.config;
  all('.rule-options').forEach(el=>el.hidden=!el.dataset.forRules.split(' ').includes(selected));
- const description={catchLow:'Asks for a fixed catch each year, even when the stock changes.',fixed:'Asks for a fixed catch each year, even when the stock changes.',catchHigh:'Asks for a fixed catch each year, even when the stock changes.',proportional:'Asks for a fixed share of the estimated SSB.',ramp:'Reduces catch as the stock falls, and stops fishing below the limit.',smooth:'Responds to the stock while limiting sudden changes in catch. A closure can override that limit.',fmsy:'Uses the model’s FMSY fishing target each year.',framp:'Uses the FMSY target when the stock is healthy, then reduces fishing as the stock falls.'};
+ const description={catchLow:'Asks for a fixed catch each year, even when the stock changes.',fixed:'Asks for a fixed catch each year, even when the stock changes.',catchHigh:'Asks for a fixed catch each year, even when the stock changes.',proportional:'Asks for a fixed share of the estimated SSB.',ramp:'At an assessment, reduces catch as the stock falls and stops fishing below the limit.',smooth:'At an assessment, responds to the stock while limiting sudden changes in advice. A closure can override that limit.',fmsy:'Uses the model’s FMSY fishing target when advice is renewed.',framp:'At an assessment, uses the FMSY target for a healthy stock and reduces fishing for a smaller stock.'};
  $('plain-rule-help').textContent=description[selected];$('selected-context').textContent=['fmsy','framp'].includes(selected)?'FMSY = the model’s target fishing rate.':'';
  const observed=$('show-history-observations').checked;all('.history-plots figure:last-child .legend>span').forEach((el,i)=>el.hidden=i===1||(i>0&&!observed));
  const view=one('.view-panel:not([hidden])')?.id;one('.scenario-bar').hidden=view!=='view-stock';

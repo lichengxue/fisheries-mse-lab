@@ -12,7 +12,7 @@ const esc=v=>String(v).replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;'
 function toast(message){$('toast').textContent=message;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').hidden=true,4500);}
 function emit(el,type='input'){el.dispatchEvent(new Event(type,{bubbles:true}));}
 function saveFile(content,type,name){const a=document.createElement('a'),url=URL.createObjectURL(new Blob([content],{type}));a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);}
-function stopPlayback(){clearInterval(playTimer);playTimer=null;$('play').textContent='Play years';}
+function stopPlayback(){clearInterval(playTimer);playTimer=null;if(globalThis.MSEFeedback)globalThis.MSEFeedback.stop();else $('play').textContent='Play feedback';}
 function showView(key,scroll=true){
  if(!names[key])return;view=key;stopPlayback();
  document.body.dataset.controlsOpen='false';$('toggle-controls').setAttribute('aria-expanded','false');
@@ -62,7 +62,7 @@ function updateState(){
  $('stop-run').hidden=!api.busy;$('stale-banner').hidden=!api.dirty;
  $('stale-banner').textContent=api.busy?'Settings changed during the run. The next update will use them.':'Settings changed. The plots show the last completed run.';
  $('pin-baseline').disabled=!api.result||api.busy||api.dirty;
- $('year-number').max=$('year').max;$('year-number').value=$('year').value;$('previous').disabled=+$('year').value<=1;
+ $('year-number').max=$('year').max;if(document.activeElement!==$('year-number'))$('year-number').value=$('year').value;$('previous').disabled=+$('year').value<=1;
 }
 function schedule(){clearTimeout(timer);if($('auto-update').checked&&!suppress)timer=setTimeout(()=>{stopPlayback();api.run();},650);}
 document.addEventListener('mse:dirty',()=>{updateState();schedule();syncSpecies();drawSurvey();if(!dragging)drawEditor();});
@@ -128,7 +128,7 @@ function apply(c){clearTimeout(timer);stopPlayback();suppress=true;api.applyConf
 $('reset-scenario').addEventListener('click',()=>{apply({...m.DEFAULTS,historicalF:m.DEFAULTS.historicalF.slice()});$('historyPreset').value='development';showView('stock');toast('Classroom defaults restored.');});
 document.querySelectorAll('[data-scenario]').forEach(b=>b.addEventListener('click',()=>{const c={...m.DEFAULTS};let key='stock';if(b.dataset.scenario==='rebuild'){c.species='long';c.historicalF=m.historicalPreset('rebuilding');c.years=100;c.rule='framp';}if(b.dataset.scenario==='noise'){c.surveyCV=.5;c.surveyEvery=2;c.estimator='direct';key='data';}if(b.dataset.scenario==='catch'){c.species='short';const ref=m.referencePoints(m.makeStock('short'),c);c.catchLow=Math.round(ref.MSY*.5);c.fixedCatch=Math.round(ref.MSY);c.catchHigh=Math.round(ref.MSY*1.5);key='results';}apply(c);showView(key);toast('Classroom scenario loaded.');}));
 $('msy-catches').addEventListener('click',()=>{try{const c=api.configuration(),ref=m.referencePoints(m.makeStock(c.species,c.Mfactor),c);['catchLow','fixedCatch','catchHigh'].forEach((id,i)=>{$(id).value=Math.min(1000,Math.round(ref.MSY*[.5,1,1.5][i]));});emit($('fixedCatch'));syncControls();toast('Catch levels set using the current management-model MSY.');}catch(e){toast(e.message);}});
-$('save-scenario').addEventListener('click',()=>{try{saveFile(JSON.stringify({format:'fisheries-mse-scenario',interfaceVersion:'1.8.1',config:api.configuration(),workshop:globalThis.MSEWorkshop?.getState(),comparison:globalThis.MSETradeoffView?.getState()},null,2),'application/json','fisheries-mse-scenario.json');}catch(e){toast(e.message);}});
+$('save-scenario').addEventListener('click',()=>{try{saveFile(JSON.stringify({format:'fisheries-mse-scenario',interfaceVersion:'1.9.0',config:api.configuration(),workshop:globalThis.MSEWorkshop?.getState(),comparison:globalThis.MSETradeoffView?.getState()},null,2),'application/json','fisheries-mse-scenario.json');}catch(e){toast(e.message);}});
 $('load-scenario').addEventListener('click',()=>$('scenario-file').click());
 $('scenario-file').addEventListener('change',async()=>{const file=$('scenario-file').files[0];if(!file)return;try{if(file.size>5e6)throw Error('Choose a scenario smaller than 5 MB.');const data=JSON.parse(await file.text());const config=m.check(data.config||data);if(data.comparison)globalThis.MSETradeoffView?.loadState(data.comparison);if(data.workshop)globalThis.MSEWorkshop?.loadState(data.workshop);apply(config);toast('Saved scenario loaded.');}catch(e){toast('Could not load the scenario: '+e.message);}finally{$('scenario-file').value='';}});
 // Comparison views show common-rule outcomes, rather than just a selected path.
@@ -167,9 +167,9 @@ function drawSurvey(){
 
 function setYear(year){$('year').value=Math.max(1,Math.min(+$('year').max,year));emit($('year'));updateState();}
 $('previous').addEventListener('click',()=>{stopPlayback();setYear(+$('year').value-1);});
-$('year-number').addEventListener('change',()=>{stopPlayback();setYear(+$('year-number').value||1);});
-$('year').addEventListener('input',()=>{if(!playingStep)stopPlayback();updateState();});$('next').addEventListener('click',()=>{stopPlayback();updateState();});
-$('play').addEventListener('click',()=>{if(playTimer){stopPlayback();return;}if(+$('year').value>=+$('year').max)setYear(1);$('play').textContent='Pause';playTimer=setInterval(()=>{const next=+$('year').value+1;if(next>+$('year').max){stopPlayback();return;}$('year').value=next;playingStep=true;emit($('year'));playingStep=false;$('play').textContent='Pause';updateState();},700);});
+$('year-number').addEventListener('input',()=>{if($('year-number').value!==''&&$('year-number').checkValidity()){stopPlayback();setYear(+$('year-number').value);}});
+$('year').addEventListener('input',()=>{if(!playingStep&&!globalThis.MSEFeedback?.advancing)stopPlayback();updateState();});$('next').addEventListener('click',()=>{stopPlayback();updateState();});
+$('play').addEventListener('click',()=>{if(globalThis.MSEFeedback){globalThis.MSEFeedback.toggle();return;}if(playTimer){stopPlayback();return;}if(+$('year').value>=+$('year').max)setYear(1);$('play').textContent='Pause';playTimer=setInterval(()=>{const next=+$('year').value+1;if(next>+$('year').max){stopPlayback();return;}$('year').value=next;playingStep=true;emit($('year'));playingStep=false;$('play').textContent='Pause';updateState();},700);});
 // Enlarged and downloadable plots retain their scientific labels and legends.
 function exportSVG(figure){const source=figure.querySelector('.chart svg,.history-editor svg');if(!source)return null;const svg=source.cloneNode(true),vb=source.viewBox.baseVal,title=figure.querySelector('h3')?.textContent||'Fisheries MSE plot';
  const legend=Array.from(figure.querySelectorAll('.legend>span')).filter(s=>!s.hidden).map(s=>s.textContent.trim()).join(' · '),width=vb.width||source.width.baseVal.value,height=vb.height||source.height.baseVal.value,font=document.documentElement.dataset.textSize==='large'?16:14;
