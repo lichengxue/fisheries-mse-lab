@@ -1,4 +1,21 @@
-SIMPLER STUDENT VIEW — INTERFACE 1.5.1
+READABLE TEXT AND FISHERIES SYMBOLS — INTERFACE 1.6
+
+Labels, captions, buttons and plot text use larger defaults. Choose Text size
+at the top of the page: Comfortable or Larger. This preference is remembered
+by the browser independently of model scenarios.
+
+Fish symbols identify the life-history choices and stock information. Boats
+identify fishing and fleet results; the fish-basket symbol identifies catch.
+Income and community symbols accompany financial and stakeholder outputs.
+Symbols supplement the written labels. They do not encode quantities or change
+the population, management rules, assumptions or calculated results.
+
+Chart axes allow room for the larger text. SVG downloads preserve readable
+labels and wrap their titles and legends to fit the figure width.
+
+--------------------------------------------------------------------
+
+SIMPLER STUDENT VIEW — INTERFACE 1.6
 
 Start with the question at the top of each page. Most pages show one main plot
 or a pair of closely related plots. Extra controls, tables and equations start
@@ -29,7 +46,7 @@ Economics & livelihoods -> Income & jobs; Stakeholder workshop -> Stakeholder di
 
 --------------------------------------------------------------------
 
-INTERFACE 1.5.1 — QUICK CLASSROOM WORKFLOW
+INTERFACE 1.6 — QUICK CLASSROOM WORKFLOW
 
 Use the six sections across the top. On a small screen, open “Edit … settings” when controls are needed.
 
