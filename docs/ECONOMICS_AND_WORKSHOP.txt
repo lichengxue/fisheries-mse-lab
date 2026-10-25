@@ -19,9 +19,9 @@ People & money, Income & jobs and Stakeholder discussion.
 --------------------------------------------------------------------
 
 PEOPLE & VALUE: A CLASSROOM MSE WORKSHOP
-Interface 1.5.0 / age-structured model 1.3.0
+Interface 1.7.0 / age-structured model 1.4.0
 
-Open section 6, People & value. The Economics & livelihoods and Stakeholder
+Open section 7, People & money. The Economics & livelihoods and Stakeholder
 workshop buttons switch between accounting outcomes and deliberation tools.
 Use the settings panel (or Edit people & value settings on smaller screens).
 
@@ -141,3 +141,7 @@ Closing the feedback loop: on stakeholder participation in management strategy
 evaluation (2019), NOAA repository: https://repository.library.noaa.gov/view/noaa/34513
 CDFW, Management Strategy Evaluation:
 https://wildlife.ca.gov/Conservation/Marine/MLMA/Master-Plan/Mgmt-Strategy-Eval
+
+SURVEY DATA IN VERSION 1.7
+Survey costs count visits whether they collect an index, ages, or both.
+Age-sample size does not add a separate ageing cost in this version.

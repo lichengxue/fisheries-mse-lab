@@ -9,8 +9,8 @@ The initial true population is the unfished age distribution, scaled to unfished
 For each supplied historical year t:
 
 1. Calculate starting spawning biomass, S[t] = sum(N[a,t] × weight[a] × maturity[a]).
-2. Observe S[t] with the survey model when a survey is scheduled.
-3. Update the manager's estimated state.
+2. Generate a relative survey-selected biomass index and/or an age sample when a survey is scheduled.
+3. Fit the manager's assessment using the available observations.
 4. Apply the supplied F[t] directly to the true population: F[a,t] = F[t] × selectivity[a].
 5. Calculate catch using the Baranov equation and report it to the estimator.
 6. Survive and age the true population, adding expected Beverton–Holt recruits as age 1 next year.
@@ -46,7 +46,62 @@ sigma² = log(1 + CV²), z ~ Normal(0,1)
 
 Survey and implementation error use the same mean-one construction with separate random draws. Survey timing continues across the historical handoff. The smoothed catch rule uses the final historical catch as its first change-cap baseline.
 
-The estimator receives simulated surveys and reported catch, never true numbers at age or true historical F. Direct and averaged-survey estimators use an assumed unfished age shape when converting target F to a quota; the age-structured filter supplies its own estimated ages.
+The assessment receives simulated survey observations and lagged reported total catch, never true numbers at age or true historical F. The age-structured assessment supplies estimated ages to F-based fishing rules. The two index shortcuts instead use an assumed unfished age shape.
+
+## Survey data: index and age composition
+
+A survey can provide an index, an age sample, or both in the same visit. Survey selectivity is one from the chosen minimum survey age onward and zero below it. It is separate from fishing selectivity. Observations occur at the beginning of each year, before fishing.
+
+```text
+Bsurvey[t] = sum(survey_selectivity[a] × N[a,t] × weight[a])
+I[t] = true_q × Bsurvey[t] × (1 + survey_bias) × exp(sigma*z - sigma²/2)
+sigma² = log(1 + index_CV²)
+
+p[a,t] = survey_selectivity[a] × N[a,t] / sum(survey_selectivity × N)
+age_counts[t] ~ Multinomial(effective_sample_size, p[,t])
+```
+
+The index is in relative index units, **not tonnes of SSB**. Its scale defaults to q = 0.1 index units per tonne of selected biomass. Ages describe sampled **numbers**, not biomass. Larger effective samples reduce age-sampling noise; changing index CV does not change those counts. Age samples assume independent fish and no ageing error. In real surveys nominal sample size can overstate effective information because fish from a tow are correlated. The terminal age is a plus group.
+
+Age draws use a separate deterministic random stream. Recruitment, index-error and implementation draws do not change when age sampling is enabled. Within a replicate and year, strategies share the same underlying random uniforms; their age counts differ as their populations diverge. Historical and projection streams are separate.
+
+## Explicit age-structured assessment (default)
+
+This is a **simplified sequential penalized-likelihood assessment**, implemented in this repository for teaching. It is not Stock Synthesis, ASAP, or a full retrospective catch-at-age fit.
+
+The assessment maintains its own numbers at age and independent log-abundance variances. It initializes with its assumed unfished age structure and log variance 0.36 at each age. Assumed M can differ from true M; the assumed stock is recalibrated to the same known unfished SSB of 1,000 t. At each year:
+
+1. Predict numbers at age using last year's fitted ages, Baranov inversion of the **previous reported total catch**, age-specific survival, the plus group and expected Beverton–Holt recruitment. The assessment does not receive future catches or true fishing mortality.
+2. Fit current log numbers at age to the current relative index and, when enabled, survey age counts. The biological prediction is a penalty, so observed age composition can change the age pattern rather than merely rescale it.
+3. Report fitted numbers at age, SSB = sum(N × weight × maturity), fitted survey index and age proportions. The fitted state enters the HCR. The previous catch inversion also supplies a lagged estimated F. A capacity mismatch is flagged when the predicted population cannot explain the previous catch within F ≤ 3/year.
+
+For x[a] = log N[a], predicted log numbers mu[a], and predicted variances P[a], the annual objective, ignoring constants, is:
+
+```text
+L(x) = sum((x[a] - mu[a])² / (2 P[a]))
+     + (log(assumed_q × Bsurvey(x)) - log(I) - sigma²/2)² / (2 V)
+     - sum(age_count[a] × log(p[a](x)))
+```
+
+Only available, included data terms enter the objective. V = max(10^-6, log(1 + index_CV²)); the small floor permits a numerically stable near-exact index at CV = 0. The mean-one lognormal correction uses the actual sigma², including zero when CV = 0. A damped Gauss–Newton iteration (maximum 18 steps, with line search) lowers this objective; its information matrix is the prior precision plus the index and multinomial expected information. The diagonal-plus-two-rank structure allows an O(A) linear solve. Diagnostic exports show before/after objective values and the interface reports iteration count. Iterations are a numerical fit diagnostic, not proof of scientific adequacy.
+
+An approximate conditional Gaussian covariance is the inverse of this information matrix. Delta-method log-SSB variance is g'Cov(x)g, where g[a] is the fitted age's contribution to SSB divided by total fitted SSB. The displayed approximate 80% range is SSB × exp(±1.28155 × sqrt(variance)). This is an assessment range within **one simulated future**, distinct from the 10th–90th percentile bands across MSE futures.
+
+For prediction, posterior diagonal variances follow the surviving cohorts; plus-group variances combine with squared abundance weights. The selected assessment process variance log(1 + process_CV²) is added to surviving ages. New recruitment gets log(1 + recruitment_CV²) plus this process variance. Variances are bounded numerically (10^-7 through 4); inverse-information diagonals have a floor of 10^-8. Cross-age covariance is used in the current SSB range but **discarded between years**. Catch-derived F is treated as fixed during variance propagation. These approximations can understate uncertainty, particularly after long gaps or model misspecification. There is no whole-history smoothing or refit.
+
+q is fixed at its **assumed** value rather than jointly estimated: a relative index and age proportions do not by themselves identify absolute scale. Growth, maturity, selectivities, BH parameters, recruitment CV and unfished SSB are assumed known. M, q, process flexibility and inclusion of ages are editable assessment assumptions. The fit assumes zero survey bias. Its range excludes uncertainty in biological parameters, q, stock structure, ageing error and unreported catch; it is not a validated coverage guarantee.
+
+### Index shortcuts for comparison
+
+“Latest value” and “Last 3 values” convert the relative index to SSB using assumed q and the **unfished** ratio of SSB to survey-selected biomass. They hold their latest estimate between surveys, ignore age samples and catch when estimating the stock, and calculate no uncertainty band. They can therefore be wrong even with zero index noise if the stock's age pattern changes. They are explicitly labelled shortcuts. An ages-only survey requires the age-structured assessment with ages included. Earlier saved `filter` scenarios migrate to `assessment`; older browser settings migrate to the new assessment default while retaining other settings.
+
+### Data-fit plots and exports
+
+The Survey screen plots relative index observations and observed age proportions. The Assessment screen plots estimated SSB against true SSB (truth is a teaching aid only). Optional fit plots compare observed/fitted index and observed/fitted proportions **among survey-selected fish**. Neither index values nor sampled proportions are plotted as tonnes of SSB.
+
+The joint assessment CSV contains historical and future observations, effective age counts, fitted index/proportions, estimated numbers at age, estimated SSB and its approximate range, lagged reported catch and estimated F, fit diagnostics, and the full configuration. True SSB is explicitly marked teaching-only. It describes the first replicate and selected future strategy, not an ensemble mean.
+
+The observation-likelihood choices follow standard fisheries practice described in the [Stock Synthesis manual](https://nmfs-ost.github.io/ss3-doc/SS330_User_Manual_release.html). The separation of population, observation and statistical assessment models is described by [NOAA Fisheries](https://www.fisheries.noaa.gov/feature-story/more-about-fish-stock-assessment-models). Those sources support the concepts; this simplified sequential solver is specific to this classroom lab.
 
 ## Reference points and comparison
 
@@ -56,4 +111,4 @@ The crossing-risk metric counts projection years 1 through the chosen horizon; i
 
 ## Economic postprocessing and stakeholder workshop
 
-Model 1.3.0 retains actual catch and F for every future and projection year. This adds no random draws and changes no biological equations. `src/economics.js` applies editable accounting assumptions to these trajectories; `src/workshop.js` displays economic outcomes and an objective-scoring workshop. These modules do not alter biology, management advice or fleet behavior. See [the full equations and exercise](ECONOMICS_AND_WORKSHOP.txt). The interface labels landings-supported job-years as a proxy and separates calculated preference scores from participants’ recorded votes.
+Actual catch and F are retained for every future and projection year. `src/economics.js` applies editable accounting assumptions to these trajectories; `src/workshop.js` displays economic outcomes and an objective-scoring workshop. These modules do not alter biology, management advice or fleet behavior. Public survey cost counts visits, including ages-only visits; age-sample size does not add a separate ageing cost in this version. See [the full equations and exercise](ECONOMICS_AND_WORKSHOP.txt). The interface labels landings-supported job-years as a proxy and separates calculated preference scores from participants’ recorded votes.
