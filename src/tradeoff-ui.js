@@ -68,7 +68,7 @@ function radar(profiles){
  T.AXES.forEach((a,i)=>{const p=point(i,100);svg.append(node('line',{x1:cx,y1:cy,x2:p.x,y2:p.y,stroke:'#c0d1d7'}));});
  for(const score of [0,25,50,75,100]){const p=point(0,score);const text=node('text',{x:p.x+7,y:p.y+5,fill:'#526b76','font-size':large?16:14},String(score));text.style.fontSize=(large?16:14)+'px';svg.append(text);}
  const labels=[['Avoid low','SSB'],['Catch'],['Fishing','profit'],['Jobs','supported'],['Steady','catches']];
- T.AXES.forEach((a,i)=>{const p=point(i,100,r+gap),text=node('text',{x:p.x,y:p.y-(labels[i].length-1)*(font+2)/2,'text-anchor':'middle','font-weight':600,fill:'#173541'});text.style.fontSize=font+'px';
+ T.AXES.forEach((a,i)=>{const p=point(i,100,r+gap),text=node('text',{x:p.x,y:Math.max(font+8,p.y-(labels[i].length-1)*(font+2)/2),'text-anchor':'middle','font-weight':600,fill:'#173541'});text.style.fontSize=font+'px';
   labels[i].forEach((line,j)=>text.append(node('tspan',{x:p.x,dy:j?font+2:0},line)));svg.append(text);
  });
  const dashes=['','8 4','2 4'];
