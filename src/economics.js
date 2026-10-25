@@ -3,7 +3,7 @@
 const DEFAULTS={price:4,smallShare:.5,costScale:1,smallCostF:200000,largeCostF:120000,smallFixed:20000,largeFixed:30000,smallTonnesJob:4,largeTonnesJob:10,discount:.03,surveyCost:10000};
 const TARGETS={catch:80,profit:200000,jobs:12,change:50};
 const GUARDRAILS={enabled:true,risk:.2,profit:0,jobs:8,budget:20000};
-const CRITERIA=[{id:'safety',name:'Stock safety'},{id:'profit',name:'Operating profit'},{id:'jobs',name:'Livelihoods proxy'},{id:'catch',name:'Catch level'},{id:'stability',name:'Catch stability'}];
+const CRITERIA=[{id:'safety',name:'Keep the stock healthy'},{id:'profit',name:'Fishing profit'},{id:'jobs',name:'Jobs supported'},{id:'catch',name:'Catch amount'},{id:'stability',name:'Steady catches'}];
 const ROLES=[
  {id:'fleet',name:'Fleet representatives',weights:{safety:2,profit:5,jobs:1,catch:3,stability:2}},
  {id:'community',name:'Coastal community',weights:{safety:3,profit:2,jobs:5,catch:2,stability:3}},

@@ -11,11 +11,11 @@
     {id:'catchLow',name:'Fixed catch A',short:'Catch A'},
     {id:'fixed', name:'Fixed catch B', short:'Catch B'},
     {id:'catchHigh',name:'Fixed catch C',short:'Catch C'},
-    {id:'proportional',name:'Proportional catch',short:'Proportional'},
-    {id:'ramp',name:'Biomass ramp',short:'Biomass ramp'},
-    {id:'smooth',name:'Ramp + catch smoothing',short:'Ramp + smoothing'},
-    {id:'fmsy',name:'Constant F target',short:'F target'},
-    {id:'framp',name:'F-based biomass ramp',short:'F ramp'}
+    {id:'proportional',name:'Catch a fixed share',short:'Fixed share'},
+    {id:'ramp',name:'Stock-based catch',short:'Stock rule'},
+    {id:'smooth',name:'Stock rule + steady catch',short:'Steady catch'},
+    {id:'fmsy',name:'FMSY target',short:'FMSY target'},
+    {id:'framp',name:'FMSY with a stock limit',short:'FMSY + limit'}
   ];
   const DEFAULTS={species:'medium',surveyCV:0.25,surveyBias:0,surveyEvery:1,
     estimator:'direct',recruitCV:0.45,implementationCV:0.10,historicalF:historicalPreset('development'),
