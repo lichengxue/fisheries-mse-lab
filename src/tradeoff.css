@@ -1,0 +1,26 @@
+/* One comparison at a time keeps the class discussion focused. */
+.comparison-modes{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 20px}
+.comparison-modes .btn[aria-pressed=true]{color:#fff;background:var(--teal);border-color:var(--teal)}
+.mp-choices{display:flex;gap:8px 10px;flex-wrap:wrap;margin:12px 0 18px}
+.mp-choice{display:flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:7px;background:#fff;padding:8px 10px;cursor:pointer;font-size:1rem}
+.mp-choice.included{background:#edf6f4;border-color:#9dbeb6}
+.mp-choice input{accent-color:var(--teal);width:18px;height:18px;margin:0}
+.mp-choice .swatch{width:14px;margin:0}
+.mp-choice:has(input:disabled):not(.included){color:var(--muted);background:#f5f7f7;cursor:default}
+.radar-figure{position:relative;background:#fff;border:1px solid var(--line);border-radius:9px;padding:20px}
+#radar-chart{height:480px}
+#radar-legend{gap:10px 20px;line-height:1.5;margin:10px 0 0}
+.radar-key{display:inline-block;width:27px;height:0;border-top:3px solid;vertical-align:middle}
+.radar-key.key-1{border-top-style:dashed}.radar-key.key-2{border-top-style:dotted}
+#radar-context{margin:13px 0 20px;line-height:1.6}
+.comparison-targets{display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;margin:18px 0}
+.comparison-targets .field{font-size:1rem}
+#radar-values{font-size:1rem;margin:16px 0}
+#radar-values th{white-space:normal;min-width:100px}
+#radar-values td:first-child{min-width:165px;text-align:left}
+#radar-scale-error{color:#9f332c}
+#comparison-csv{margin:15px 0 0}
+.pairwise-controls{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:0 0 4px}
+.pairwise-controls .field{font-size:1rem;margin:0}
+#pairwise-panel .chart{height:370px}
+@media(max-width:550px){#radar-chart{height:400px}.radar-figure{padding:13px}.comparison-targets,.pairwise-controls{grid-template-columns:1fr}.mp-choice{font-size:1rem;padding:7px 9px}.comparison-modes .btn{flex:1}#radar-legend{gap:8px}}
