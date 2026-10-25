@@ -13,6 +13,8 @@ test('All futures determine profit, losses, discounted NPV and pointwise bands',
  const r=e.evaluate(fixture(),a).rules[0];near(r.metrics.profit,-5000);near(r.metrics.npv,-10000);near(r.metrics.lossYears,.75);near(r.metrics.negativeNPV,.5);near(r.metrics.agencyAnnual,1000);near(r.metrics.netAfterSurvey,-6000);near(r.profitBands[0].mid,-10000);near(r.profitBands[1].mid,0);near(r.profitBands[0].lo,-14000);
  const discounted=e.evaluate(fixture(),{...a,discount:.1}).rules[0];near(discounted.metrics.npv,(-5000/1.1+5000/1.1**2-15000/1.1-5000/1.1**2)/2);
  assert.deepEqual(e.evaluate(fixture(),a,false).rules[0].profitBands,[]);
+ const ageOnly=fixture();ageOnly.rules[0].path.survey=[null,null];ageOnly.rules[0].path.surveyVisits=[true,false];
+ near(e.evaluate(ageOnly,a).rules[0].metrics.agencyAnnual,1000);
 });
 test('Retained catch and F trajectories match biological summaries without economic feedback',()=>{
  const r=m.runEnsemble({years:8,reps:4}),before=structuredClone(r);

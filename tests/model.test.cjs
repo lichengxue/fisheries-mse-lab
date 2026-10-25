@@ -37,12 +37,13 @@ test('Survey multiplier has the requested mean and CV',()=>{
  const mean=m.sum(a)/a.length,cv=Math.sqrt(m.sum(a.map(x=>(x-mean)**2))/a.length)/mean;
  assert.ok(Math.abs(mean-1)<.01);assert.ok(Math.abs(cv-.5)<.01);
 });
-test('Estimator sees survey and past catch, with no simulated true-state argument',()=>{
+test('Index shortcuts use assumed q and shape; the assessment has its own age state',()=>{
  const c=m.check({estimator:'mean'}),s=m.makeStock(c.species),e=m.makeEstimator(s,c);
- near(m.estimate(e,100,c),100);near(m.estimate(e,200,c),150);near(m.estimate(e,300,c),200);
- near(m.estimate(e,400,c),300);near(m.estimate(e,null,c),300);
- const d=m.check({estimator:'filter',surveyCV:0}),f=m.makeEstimator(s,d);
- near(m.estimate(f,777,d),777);m.predictEstimator(f,20,d);assert.ok(f.N.every(x=>x>=0&&Number.isFinite(x)));
+ const I=m.surveyExpectation(s.unfished,s,c,c.assumedQ).index/1000;
+ near(m.estimate(e,100*I,c),100);near(m.estimate(e,200*I,c),150);near(m.estimate(e,300*I,c),200);
+ near(m.estimate(e,400*I,c),300);near(m.estimate(e,null,c),300);
+ const d=m.check({estimator:'assessment',surveyCV:0}),f=m.makeEstimator(s,d);
+ m.estimate(f,777,d);m.predictEstimator(f,20,d);assert.ok(f.N.every(x=>x>=0&&Number.isFinite(x)));
 });
 test('Closure overrides smoothing, and closure does not trap reopening at zero',()=>{
  const c=m.check({limit:.2,trigger:.5,harvest:.2,fixedCatch:120});
@@ -51,11 +52,12 @@ test('Closure overrides smoothing, and closure does not trap reopening at zero',
  near(m.advice('fixed',1,c),120);near(m.advice('fixed',900,c),120);
  assert.equal(m.advice('ramp',200,c),0);near(m.advice('ramp',500,c),100);
 });
-test('Zero noise produces exact direct survey estimates',()=>{
+test('A perfect survey index is not an observation of SSB',()=>{
  const c=m.check({years:20,reps:1,surveyCV:0,recruitCV:0,implementationCV:0,estimator:'direct'});
  const s=m.makeStock(c.species),history=m.historicalPopulation(s,c),start={N:history.N[history.years]};
  const x=m.trial(c,s,start,'ramp',m.shocks(c.seed,0,c.years),true);
- x.estimate.forEach((v,t)=>near(v,x.ssb[t]));
+ x.survey.forEach((v,t)=>near(v,m.surveyExpectation(x.N[t],s,c).index));
+ assert.ok(x.estimate.some((v,t)=>Math.abs(v-x.ssb[t])>1));
 });
 test('Reproducible simulations and common random numbers across zero-harvest policies',()=>{
  const c={years:15,reps:12,historicalF:Array(30).fill(0),harvest:0,catchLow:0,fixedCatch:0,catchHigh:0,Fmultiplier:0};
@@ -64,7 +66,7 @@ test('Reproducible simulations and common random numbers across zero-harvest pol
  assert.notDeepEqual(m.runEnsemble({...c,seed:12}).rules[0].path.ssb,a.rules[0].path.ssb);
 });
 test('All presets, estimators and extreme noise remain finite and nonnegative',()=>{
- for(const species of Object.keys(m.PRESETS))for(const estimator of ['direct','mean','filter']){
+ for(const species of Object.keys(m.PRESETS))for(const estimator of ['direct','mean','assessment']){
   const result=m.runEnsemble({species,estimator,years:25,reps:5,surveyCV:1.5,recruitCV:1.5,implementationCV:1,surveyBias:.5,harvest:.8,initialDepletion:.15,surveyEvery:3,Mfactor:1.5});
   for(const r of result.rules){
    for(const key of ['ssb','estimate','advice','catch','F'])assert.ok(r.path[key].every(x=>Number.isFinite(x)&&x>=0),species+' '+estimator+' '+key);
@@ -87,7 +89,7 @@ test('Catch levels are independent tonne quotas and do not change with U or the 
  for(const S of [10,500,2000]){near(m.advice('catchLow',S,c),35);near(m.advice('fixed',S,c),75);near(m.advice('catchHigh',S,c),125);}
 });
 test('F-based decision converts estimated ages into catch, and the F ramp closes at the limit',()=>{
- const c=m.check({estimator:'filter',Fmultiplier:1}),s=m.makeStock(c.species),ref=m.referencePoints(s,c),e=m.equilibrium(s,c.steepness,ref.Fmsy,c.srType),state=m.makeEstimator(s,c);
+ const c=m.check({estimator:'assessment',Fmultiplier:1}),s=m.makeStock(c.species),ref=m.referencePoints(s,c),e=m.equilibrium(s,c.steepness,ref.Fmsy,c.srType),state=m.makeEstimator(s,c);
  state.N=e.N.slice();const d=m.decision('fmsy',e.SSB,c,null,state,ref);
  near(d.targetF,ref.Fmsy);near(d.catch,ref.MSY);near(m.invertCatch(e.N,s,d.catch).F,ref.Fmsy,1e-8);
  near(m.targetF('framp',c.limit*1000,c,ref),0);near(m.targetF('framp',c.trigger*1000,c,ref),ref.Fmsy);
@@ -131,7 +133,7 @@ test('Supplied annual F directly determines historical catch, survival, aging an
  assert.deepEqual(h,m.historicalPopulation(s,{...c,recruitCV:0,implementationCV:0,harvest:0,fixedCatch:0}));
 });
 test('Historical endpoint and conditioned estimate are shared fairly by all future rules',()=>{
- const c=m.check({historicalF:[0,.3,.6,.2,.1],reps:4,years:8,estimator:'filter'}),r=m.runEnsemble(c),end=r.history.years;
+ const c=m.check({historicalF:[0,.3,.6,.2,.1],reps:4,years:8,estimator:'assessment'}),r=m.runEnsemble(c),end=r.history.years;
  near(r.initial.SSB,r.history.ssb[end]);assert.deepEqual(r.initial.N,r.history.N[end]);assert.equal(r.initial.source,'historicalF');
  for(const rule of r.rules){near(rule.path.ssb[0],r.initial.SSB);assert.deepEqual(rule.path.N[0],r.history.N[end]);near(rule.path.estimate[0],r.rules[0].path.estimate[0]);near(rule.path.survey[0],r.rules[0].path.survey[0]);}
  const s=m.makeStock(c.species),w=m.conditionEstimator(s,c,r.history,m.shocks(42,0,end)),before=w.state.N.slice();
@@ -146,6 +148,6 @@ test('Historical F changes the true projection start, while observation noise ch
 });
 test('Survey schedule and smoothing baseline continue through the historical handoff',()=>{
  const c=m.check({historicalF:[.1,.2,.3,.4,.5],surveyEvery:3,surveyCV:0,estimator:'mean',recruitCV:0,implementationCV:0,reps:1,years:5}),r=m.runEnsemble(c),path=r.rules.find(v=>v.id==='smooth').path;
- assert.equal(path.survey[0],null);near(path.survey[1],path.ssb[1]);near(path.estimate[0],r.historicalView.estimate.at(-1));
+ assert.equal(path.survey[0],null);near(path.survey[1],m.surveyExpectation(path.N[1],r.stock,c).index);near(path.estimate[0],r.historicalView.estimate.at(-1));
  near(path.advice[0],m.advice('smooth',path.estimate[0],c,r.history.catch.at(-1)));
 });
