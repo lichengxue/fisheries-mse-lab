@@ -65,11 +65,23 @@ The index is in relative index units, **not tonnes of SSB**. Its scale defaults 
 
 Age draws use a separate deterministic random stream. Recruitment, index-error and implementation draws do not change when age sampling is enabled. Within a replicate and year, strategies share the same underlying random uniforms; their age counts differ as their populations diverge. Historical and projection streams are separate.
 
+## Assessment interval and held catch advice
+
+`assessmentEvery` is an integer from 1–10 years, default 1. It applies to the projection; historical conditioning remains annual. Projection assessments occur in years 1, 1+k, 1+2k, … for interval k. The survey keeps its independent schedule, continuing through the historical handoff.
+
+At an assessment, all survey records since the previous assessment are processed sequentially in observation-year order, with the reported catches between them. The replay starts from the saved post-assessment prediction. It does not use future observations, true numbers at age or true F, and does not refit the full history. In the intervening years, the age-structured model predicts with reported catch and expected recruitment without assimilating new observations. The index shortcuts hold their last official estimate. Stored surveys can therefore change the next assessment without changing an earlier estimate or decision.
+
+Every rule sets an **annual tonnage quota** at the assessment and holds that quota through the advice period. A three-year interval means one annual quota in years 1–3, a new annual quota in years 4–6, and so on. This is not a three-year total to be divided among years. F-based rules calculate a target F and convert estimated numbers at age into this annual quota at the assessment; they do not hold realized F constant. Their plotted target is the assessment-time target that set the held quota. Implementation noise, changing abundance and the capacity ceiling still affect actual catch and realized F annually.
+
+For the smoothed rule, the change cap applies between advice renewals, rather than being compounded for years with no renewal. A closure/reopening override is evaluated only at an assessment. There is **no interim emergency closure** in this teaching implementation; this is one reason a longer interval can increase risk. The default annual interval retains the previous annual decision timing. Biology, historical F and Beverton–Holt recruitment are unchanged. Economic results use the changed catch/F paths; no explicit assessment cost is charged.
+
+First-replicate assessment snapshots record whether an assessment occurred, the assessment year, the final advice year, the next assessment year and which survey years were processed. Their annual predictions are kept separately from official advice. The feedback CSV exports those events with annual advice, actual catch, estimated SSB, true starting/ending SSB and recruitment.
+
 ## Explicit age-structured assessment (default)
 
 This is a **simplified sequential penalized-likelihood assessment**, implemented in this repository for teaching. It is not Stock Synthesis, ASAP, or a full retrospective catch-at-age fit.
 
-The assessment maintains its own numbers at age and independent log-abundance variances. It initializes with its assumed unfished age structure and log variance 0.36 at each age. Assumed M can differ from true M; the assumed stock is recalibrated to the same known unfished SSB of 1,000 t. At each year:
+The assessment maintains its own numbers at age and independent log-abundance variances. It initializes with its assumed unfished age structure and log variance 0.36 at each age. Assumed M can differ from true M; the assumed stock is recalibrated to the same known unfished SSB of 1,000 t. For each annual step processed by an assessment:
 
 1. Predict numbers at age using last year's fitted ages, Baranov inversion of the **previous reported total catch**, age-specific survival, the plus group and expected Beverton–Holt recruitment. The assessment does not receive future catches or true fishing mortality.
 2. Fit current log numbers at age to the current relative index and, when enabled, survey age counts. The biological prediction is a penalty, so observed age composition can change the age pattern rather than merely rescale it.
@@ -93,11 +105,11 @@ q is fixed at its **assumed** value rather than jointly estimated: a relative in
 
 ### Index shortcuts for comparison
 
-“Latest value” and “Last 3 values” convert the relative index to SSB using assumed q and the **unfished** ratio of SSB to survey-selected biomass. They hold their latest estimate between surveys, ignore age samples and catch when estimating the stock, and calculate no uncertainty band. They can therefore be wrong even with zero index noise if the stock's age pattern changes. They are explicitly labelled shortcuts. An ages-only survey requires the age-structured assessment with ages included. Earlier saved `filter` scenarios migrate to `assessment`; older browser settings migrate to the new assessment default while retaining other settings.
+“Latest value” and “Last 3 values” convert the relative index to SSB using assumed q and the **unfished** ratio of SSB to survey-selected biomass. They hold their latest official estimate between assessments, ignore age samples and catch when estimating the stock, and calculate no uncertainty band. They can therefore be wrong even with zero index noise if the stock's age pattern changes. They are explicitly labelled shortcuts. An ages-only survey requires the age-structured assessment with ages included. Earlier saved `filter` scenarios migrate to `assessment`; older browser settings migrate to the new assessment default while retaining other settings.
 
 ### Data-fit plots and exports
 
-The Survey screen plots relative index observations and observed age proportions. The Assessment screen plots estimated SSB against true SSB (truth is a teaching aid only). Optional fit plots compare observed/fitted index and observed/fitted proportions **among survey-selected fish**. Neither index values nor sampled proportions are plotted as tonnes of SSB.
+The Survey screen plots relative index observations and observed age proportions. The Assessment screen plots estimated SSB against true SSB (truth is a teaching aid only). Optional fit plots compare observed/fitted index and observed/fitted proportions **among survey-selected fish**. Outside an assessment year, they compare collected data with a prediction; those data have not yet updated the estimate. Neither index values nor sampled proportions are plotted as tonnes of SSB.
 
 The joint assessment CSV contains historical and future observations, effective age counts, fitted index/proportions, estimated numbers at age, estimated SSB and its approximate range, lagged reported catch and estimated F, fit diagnostics, and the full configuration. True SSB is explicitly marked teaching-only. It describes the first replicate and selected future strategy, not an ensemble mean.
 

@@ -1,5 +1,5 @@
 FISHERIES MSE CLASSROOM LAB
-Interface 1.8.0 / scientific model 1.4.0
+Interface 1.9.0 / scientific model 1.5.0
 
 OPEN AND EXPLORE
 Open index.html directly in a modern browser, or use the public classroom site.
@@ -26,7 +26,7 @@ SEVEN STEPS
 5. COMPARE: start with the radar or choose two goals for a trade-off plot.
    Extra panels contain trajectories, tables, risk intervals and a pinned-run
    comparison. A pin lasts for the page session; change one assumption at a time.
-6. ONE FUTURE: Previous/Next, a year number and Play years follow the annual loop.
+6. ONE FUTURE: Previous/Next, a year number and Play feedback follow the cycle.
    True SSB, the relative survey index, age sample, estimated SSB, catch advice
    and realized catch are distinct. This is the first replicate, not the median.
 7. PEOPLE & MONEY: change prices, fishing costs or fleet catch shares. Then use
@@ -106,7 +106,8 @@ error. Historical F is a forcing input, not an HCR. Future HCRs produce a quota;
 implementation error changes intended catch, and true abundance determines the
 realized fishing rate. F is capped at 3/year, so an impossible catch is unfilled.
 
-At each future year's START: survey -> assessment -> fishing decision. Then:
+At each future year's START: collect a survey if scheduled. At an assessment,
+process stored survey data and renew annual advice; otherwise keep advice. Then:
 catch implementation -> survival/ageing/recruitment -> next year's stock.
 Only past reported catch is available when the current decision is made.
 Historical observations condition the assessment before the handoff. Strategies
@@ -114,7 +115,7 @@ share copies of each replicate's conditioned state and common random draws.
 
 Fixed catches A/B/C are tonne quotas. Proportional catch is U x estimated SSB.
 The catch ramp and F ramp reduce fishing between the stock trigger and limit.
-The smoothed catch ramp limits annual advice changes, with closure and reopening
+The smoothed catch ramp limits changes between advice renewals, with closure and reopening
 exceptions. FMSY maximizes equilibrium age-structured BH yield under assumed
 biology; MSY is that yield in tonnes. An F target is converted to quota using
 estimated ages. Actual F can differ because estimates and implementation err.
@@ -132,7 +133,8 @@ Save/Load scenario includes biological, survey, assessment and workshop settings
 Older filter scenarios map to the new assessment. Earlier browser preferences
 retain their other settings while migrating to the age-structured default.
 
-Survey and Assessment share the selected decision year. Next survey year skips
+Survey and Assessment share the selected decision year. Next assessment year
+on Assessment skips to the next scheduled assessment. Next survey year on Survey skips
 to the next scheduled visit and wraps at the end. Main plots follow one possible
 future for the chosen fishing rule. Enlarge/SVG buttons work on each plot.
 Download assessment & survey data gives one row per year and age for historical
@@ -150,7 +152,7 @@ SOURCE AND VALIDATION
 src/model.js: biology, observations, sequential fitting, rules and reference points.
 src/assessment-ui.js: survey/assessment plots, controls and joint data export.
 src/app.js: web worker, main plots and other CSVs.
-Build: npm run build. Verify: npm test (42 checks). No third-party packages.
+Build: npm run build. Verify: npm test (48 checks). No third-party packages.
 The GitHub Pages workflow tests and deploys dist/. index.html is the same
 standalone offline lab. The model assumptions are also available in the GUI.
 
@@ -187,3 +189,35 @@ SVG buttons save both chart types. Download comparison CSV records selected MPs,
 raw values with units, all five scores, targets, economics and model settings.
 Save/Load scenario also retains comparison choices. Browser preferences remember
 the selected view, MPs and axes; they do not alter the model's random draws.
+
+ASSESSMENT INTERVAL AND FEEDBACK EXERCISE
+1. On Assessment, find Assessment interval. Default: every year. The same
+   setting appears in One future; it can be changed from either screen.
+2. Open One future and choose Try a 3-year cycle. Assessments are in years
+   1, 4, 7, ... . Keep the survey annual to see data collected during a gap.
+3. Press Play feedback. Survey, Assessment, Catch advice and Population
+   highlight in order. Pause, change speed, or choose a year in the strip.
+4. At year 1, record the annual advice. Watch it stay the same in years 2
+   and 3 while SSB, actual catch and the model prediction change.
+5. At year 4, watch the assessment use surveys from years 2, 3 and 4.
+   It sets a new ANNUAL catch, held through year 6.
+6. Compare annual, 3-year and 5-year assessment intervals with the same
+   random seed. Discuss the risk of reacting later to a declining stock.
+7. In See this year's numbers, Download this future exports the timing,
+   advice, catch, SSB, recruitment and survey years used.
+
+The interval affects future assessments only. Historical observations still
+condition the initial assessment annually. Stored surveys are processed in
+year order at the next assessment, using past reported catch. No true fish
+numbers or future data enter the fit. This is a sequential update, not a
+full-history statistical refit. Between assessments, the age model predicts
+without new data; index shortcuts hold their last estimate.
+
+All rules, including F-based rules, hold annual catch advice through the
+period. An F target is converted to annual tonnage at the assessment; actual
+F can change each year. The smoothed rule's change cap applies at renewals.
+No emergency closure is applied between assessments. The catch taken can
+still differ because of implementation noise or the capacity ceiling.
+Fish icons are decorative; numeric SSB and its bar represent mature biomass.
+Reduced-motion settings remove swimming/pulse effects while preserving steps.
+Playback shows the selected first replicate, rather than the ensemble median.

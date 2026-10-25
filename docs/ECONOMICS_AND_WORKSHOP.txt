@@ -19,7 +19,7 @@ People & money, Income & jobs and Stakeholder discussion.
 --------------------------------------------------------------------
 
 PEOPLE & VALUE: A CLASSROOM MSE WORKSHOP
-Interface 1.8.0 / age-structured model 1.4.0
+Interface 1.9.0 / age-structured model 1.5.0
 
 Open section 7, People & money. The Economics & livelihoods and Stakeholder
 workshop buttons switch between accounting outcomes and deliberation tools.
