@@ -1,6 +1,6 @@
 {
   "name": "fisheries-mse-lab",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "private": true,
   "description": "A standalone age-structured fisheries MSE teaching GUI with historical F and Beverton-Holt recruitment.",
   "scripts": {
