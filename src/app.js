@@ -66,7 +66,7 @@ function renderTrace(){
  const c=result.config,r=current(),t=+$('year').value-1,path=r.path;
  $('year-value').textContent=t+1;$('next').disabled=t===c.years-1;
  const values=[['True SSB',path.ssb[t],'truth','t'],['Survey measurement',path.survey[t],'manager','t'],['Estimated SSB',path.estimate[t],'manager','t'],['Allowed catch',path.advice[t],'manager','t'],['F target',path.targetF[t],'manager','/ year'],['Actual F',path.F[t],'truth','/ year'],['Actual catch',path.catch[t],'truth','t'],['Next year’s SSB',path.ssb[t+1],'truth','t']];
- $('trace').innerHTML=values.map(([label,value,role,unit])=>`<div class="trace-item ${role} ${['F target','Actual F','Next year’s SSB'].includes(label)?'extra-trace':''}"><small>${label}</small><div class="trace-value">${value===null?(unit==='t'?'No survey':'Catch rule'):`${num(value,unit==='t'?1:3)} <span>${unit}</span>`}</div></div>`).join('');
+ $('trace').innerHTML=values.map(([label,value,role,unit])=>`<div class="trace-item ${role} ${['F target','Actual F','Next year’s SSB'].includes(label)?'extra-trace':''}"><small>${globalThis.MSEVisuals?.iconForLabel(label)||''}${label}</small><div class="trace-value">${value===null?(unit==='t'?'No survey':'Catch rule'):`${num(value,unit==='t'?1:3)} <span>${unit}</span>`}</div></div>`).join('');
  const cap=path.capped?` Some quotas hit the fishing-capacity ceiling (${pct(r.metrics.capFraction,1)} of all trial-years).`:'';
  $('trace-detail').textContent=`${r.name}. One possible future, not the median. ${path.survey[t]===null?'No new survey this year. ':''}The operating model knows the true state; the decision procedure does not.${cap}`;
 }
@@ -76,7 +76,7 @@ function stepDigits(step){for(let d=0;d<6;d++)if(Math.abs(step*10**d-Math.round(
 function niceMax(x){const s=tickStep(x);return Math.ceil((x||1)/s)*s;}
 function makePlot(id,{xMax,yMax,xTitle,yTitle,title,xMin=0,percent=false,xPercent=false,integerX=false}){
  const box=$(id),width=Math.max(260,box.clientWidth),height=box.clientHeight||285;
- const left=67,right=18,top=15,bottom=52,W=width-left-right,H=height-top-bottom;
+ const extra=document.documentElement.dataset.textSize==='large'?16:0,left=82+extra,right=20,top=22,bottom=62+extra,W=width-left-right,H=height-top-bottom;
  box.replaceChildren();const svg=svgNode('svg',{width,height,viewBox:`0 0 ${width} ${height}`,role:'img','aria-label':title});
  svg.append(svgNode('title',{},title));box.append(svg);
  const clipId=id+'-clip',defs=svgNode('defs'),clip=svgNode('clipPath',{id:clipId});clip.append(svgNode('rect',{x:left,y:top,width:W,height:H}));defs.append(clip);svg.append(defs);
